@@ -9,6 +9,16 @@ export interface ChangelogItem {
 
 export const changelogData: ChangelogItem[] = [
   {
+    version: "v1.2.1",
+    date: "2025-10-12",
+    categories: [
+      {
+        name: "修复",
+        items: ["修复部分问题"],
+      },
+    ],
+  },
+  {
     version: "v1.2.0",
     date: "2025-09-16",
     categories: [
