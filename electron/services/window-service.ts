@@ -1,4 +1,4 @@
-import { BrowserWindow, ipcMain } from "electron";
+import { BrowserWindow, ipcMain, screen } from "electron";
 import path from "node:path";
 import { ConfigService } from "./config-service";
 
@@ -39,14 +39,84 @@ export class WindowService {
   }
 
   /**
+   * 智能自适应窗口尺寸计算
+   */
+  private calculateSmartWindowSize(): {
+    width: number;
+    height: number;
+    x?: number;
+    y?: number;
+  } {
+    const primaryDisplay = screen.getPrimaryDisplay();
+    const {
+      width: screenWidth,
+      height: screenHeight,
+      x: screenX,
+      y: screenY,
+    } = primaryDisplay.workArea;
+
+    // 基础配置
+    const baseConfig = {
+      minWidth: 800,
+      minHeight: 600,
+      maxWidthRatio: 0.9,
+      maxHeightRatio: 0.9,
+      preferredRatio: 0.70, // 首选占屏比例
+    };
+
+    // 计算最大允许尺寸
+    const maxWidth = Math.floor(screenWidth * baseConfig.maxWidthRatio);
+    const maxHeight = Math.floor(screenHeight * baseConfig.maxHeightRatio);
+
+    // 计算理想尺寸
+    let idealWidth = Math.floor(screenWidth * baseConfig.preferredRatio);
+    let idealHeight = Math.floor(screenHeight * baseConfig.preferredRatio);
+
+    // 应用宽高比约束（保持应用的自然宽高比）
+    const naturalAspectRatio = 1000 / 700; // 基于设计稿的宽高比
+    const currentAspectRatio = idealWidth / idealHeight;
+
+    if (currentAspectRatio > naturalAspectRatio) {
+      // 太宽了，调整高度
+      idealHeight = Math.floor(idealWidth / naturalAspectRatio);
+    } else {
+      // 太高了，调整宽度
+      idealWidth = Math.floor(idealHeight * naturalAspectRatio);
+    }
+
+    // 应用边界约束
+    const finalWidth = Math.max(
+      baseConfig.minWidth,
+      Math.min(idealWidth, maxWidth)
+    );
+
+    const finalHeight = Math.max(
+      baseConfig.minHeight,
+      Math.min(idealHeight, maxHeight)
+    );
+
+    // 计算居中位置
+    const x = Math.floor(screenX + (screenWidth - finalWidth) / 2);
+    const y = Math.floor(screenY + (screenHeight - finalHeight) / 2);
+
+    return {
+      width: finalWidth,
+      height: finalHeight,
+      x,
+      y,
+    };
+  }
+
+  /**
    * 创建主窗口
    * @returns 创建的BrowserWindow实例
    */
   public createWindow(): BrowserWindow {
+    const { width, height } = this.calculateSmartWindowSize();
     // 创建窗口
     this.win = new BrowserWindow({
-      width: 1000,
-      height: 700,
+      width: width,
+      height: height,
       minWidth: 800,
       minHeight: 600,
       frame: false,
