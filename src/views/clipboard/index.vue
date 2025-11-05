@@ -492,6 +492,24 @@ const stopClipboardWatcher = () => {
 const contentListRef = ref<HTMLElement | null>(null);
 const scrollThreshold = 200; // 距离底部多少像素时触发加载更多
 
+// 虚拟滚动相关状态
+const virtualScroll = ref({
+  startIndex: 0, // 可见区域的起始索引
+  endIndex: 0, // 可见区域的结束索引
+  visibleCount: 0, // 可见项目数量
+  itemHeight: 100, // 每个项目的大概高度（根据你的CSS调整）
+  containerHeight: 0, // 容器高度
+  totalHeight: 0, // 所有项目的总高度
+});
+
+// 计算可见项目
+const visibleItems = computed(() => {
+  return getClipboardData.value.slice(
+    virtualScroll.value.startIndex,
+    virtualScroll.value.endIndex + 1
+  );
+});
+
 /**
  * 处理滚动事件，实现懒加载更多数据
  * @returns {void}
@@ -499,14 +517,47 @@ const scrollThreshold = 200; // 距离底部多少像素时触发加载更多
 const handleScroll = () => {
   if (!contentListRef.value) return;
 
-  const { scrollTop, scrollHeight, clientHeight } = contentListRef.value;
-  const distanceToBottom = scrollHeight - scrollTop - clientHeight;
+  const scrollTop = contentListRef.value.scrollTop;
+  const containerHeight = contentListRef.value.clientHeight;
 
-  // 当滚动到接近底部时，加载更多数据
+  // 更新容器高度
+  virtualScroll.value.containerHeight = containerHeight;
+
+  // 计算可见项目数量
+  const visibleCount =
+    Math.ceil(containerHeight / virtualScroll.value.itemHeight) + 4;
+  virtualScroll.value.visibleCount = visibleCount;
+
+  // 计算起始索引
+  const startIndex = Math.floor(scrollTop / virtualScroll.value.itemHeight);
+  virtualScroll.value.startIndex = Math.max(0, startIndex - 1); // 提前一个项目渲染
+
+  // 计算结束索引
+  const endIndex = Math.min(
+    getClipboardData.value.length - 1,
+    virtualScroll.value.startIndex + visibleCount
+  );
+  virtualScroll.value.endIndex = endIndex;
+
+  // 计算总高度（用于撑开滚动容器）
+  virtualScroll.value.totalHeight =
+    getClipboardData.value.length * virtualScroll.value.itemHeight;
+
+  // 原有的懒加载逻辑
+  const scrollHeight = contentListRef.value.scrollHeight;
+  const distanceToBottom = scrollHeight - scrollTop - containerHeight;
+
   if (distanceToBottom < scrollThreshold && !isLoadingMore.value) {
     loadMoreData();
   }
 };
+
+// 监听数据变化和容器高度变化，更新虚拟滚动参数
+watch([getClipboardData, () => virtualScroll.value.containerHeight], () => {
+  virtualScroll.value.totalHeight =
+    getClipboardData.value.length * virtualScroll.value.itemHeight;
+  handleScroll();
+});
 
 // 组件挂载时启动监听，加载历史记录，卸载时停止监听
 onMounted(() => {
@@ -514,11 +565,19 @@ onMounted(() => {
   loadClipboardHistory(1, false, activeFilter.value);
   // 启动剪贴板监听
   startClipboardWatcher();
+
+  setTimeout(() => {
+    // 初始化滚动参数
+    handleScroll();
+  }, 100);
+
+  window.addEventListener("resize", handleScroll);
 });
 
 onUnmounted(() => {
   console.log("组件卸载");
   stopClipboardWatcher();
+  window.removeEventListener("resize", handleScroll);
 });
 
 // 导出数据
@@ -701,7 +760,9 @@ const deleteBatchItems = () => {
             </el-button>
             <el-dropdown trigger="click">
               <el-button>
-                更多<el-icon class="el-icon--right"><i-ep-arrow-down /></el-icon>
+                更多<el-icon class="el-icon--right"
+                  ><i-ep-arrow-down
+                /></el-icon>
               </el-button>
               <template #dropdown>
                 <el-dropdown-menu>
@@ -778,111 +839,128 @@ const deleteBatchItems = () => {
           </div>
         </template>
         <template v-else>
+          <!-- 虚拟滚动占位元素，撑开滚动区域 -->
           <div
-            v-for="item in getClipboardData"
-            :key="item.id"
-            class="content-item"
-            :class="{
-              active: selectedItem?.id === item.id,
-              favorite: item.is_favorite,
-              selected: selectedIds.has(item.id),
+            class="virtual-scroll-placeholder"
+            :style="{ height: `${virtualScroll.totalHeight}px` }"
+          ></div>
+
+          <!-- 可见项目容器，使用绝对定位 -->
+          <div
+            class="virtual-scroll-content"
+            :style="{
+              transform: `translateY(${
+                virtualScroll.startIndex * virtualScroll.itemHeight
+              }px)`,
             }"
-            @click="
-              isSelectionMode
-                ? toggleItemSelection(item.id)
-                : (copyItem(item, $event), (selectedItem = item))
-            "
           >
-            <!-- 批量选择复选框 -->
-            <div v-if="isSelectionMode" class="item-checkbox">
-              <el-checkbox
-                :model-value="selectedIds.has(item.id)"
-                @change="toggleItemSelection(item.id)"
-                @click.stop
-              />
+            <div
+              v-for="item in visibleItems"
+              :key="item.id"
+              class="content-item"
+              :class="{
+                active: selectedItem?.id === item.id,
+                favorite: item.is_favorite,
+                selected: selectedIds.has(item.id),
+              }"
+              @click="
+                isSelectionMode
+                  ? toggleItemSelection(item.id)
+                  : (copyItem(item, $event), (selectedItem = item))
+              "
+            >
+              <!-- 批量选择复选框 -->
+              <div v-if="isSelectionMode" class="item-checkbox">
+                <el-checkbox
+                  :model-value="selectedIds.has(item.id)"
+                  @change="toggleItemSelection(item.id)"
+                  @click.stop
+                />
+              </div>
+
+              <div class="item-icon">
+                <el-icon>
+                  <i-ep-Document
+                    style="color: var(--accent-blue)"
+                    v-if="item.type === 'text'"
+                  />
+                  <i-ep-Link
+                    style="color: var(--accent-green)"
+                    v-else-if="item.type === 'url'"
+                  />
+                  <i-ep-Tickets
+                    style="color: var(--accent-purple)"
+                    v-else-if="item.type === 'code'"
+                  />
+                  <i-ep-Picture
+                    style="color: var(--accent-red)"
+                    v-else-if="item.type === 'image'"
+                  />
+                  <i-ep-Document style="color: var(--accent-blue)" v-else />
+                </el-icon>
+              </div>
+              <div class="item-content">
+                <div class="item-title">
+                  {{ truncateText(item.content, 100) }}
+                </div>
+                <div class="item-meta">
+                  <span class="meta-time">
+                    <i-ep-Clock class="meta-icon" />
+                    {{ formatTime(item.timestamp) }}
+                  </span>
+                  <span class="meta-size">
+                    <i-ep-Document-Checked class="meta-icon" /> {{ item.size }}
+                  </span>
+                  <span class="meta-type" :class="`type-${item.type}`">
+                    <i-ep-InfoFilled class="meta-icon" />
+                    {{ getTypeLabel(item.type) }}
+                  </span>
+                  <span
+                    v-if="item.is_favorite"
+                    class="meta-type"
+                    :class="`type-favorite`"
+                  >
+                    <i-ep-Star class="meta-icon" />
+                    收藏
+                  </span>
+                </div>
+              </div>
+              <div class="item-actions">
+                <el-button
+                  class="item-action-btn"
+                  @click.stop="selectItem(item)"
+                  title="查看"
+                >
+                  <i-ep-view />
+                </el-button>
+                <el-button
+                  class="item-action-btn"
+                  @click.stop="toggleFavorite(item, $event)"
+                  :title="item.is_favorite ? '取消收藏' : '收藏'"
+                >
+                  <i-ep-Star class="icon-color" />
+                </el-button>
+                <el-button
+                  class="item-action-btn"
+                  @click.stop="deleteItem(item.id, $event)"
+                  title="删除"
+                >
+                  <i-ep-Delete />
+                </el-button>
+              </div>
             </div>
 
-            <div class="item-icon">
-              <el-icon>
-                <i-ep-Document
-                  style="color: var(--accent-blue)"
-                  v-if="item.type === 'text'"
-                />
-                <i-ep-Link
-                  style="color: var(--accent-green)"
-                  v-else-if="item.type === 'url'"
-                />
-                <i-ep-Tickets
-                  style="color: var(--accent-purple)"
-                  v-else-if="item.type === 'code'"
-                />
-                <i-ep-Picture
-                  style="color: var(--accent-red)"
-                  v-else-if="item.type === 'image'"
-                />
-                <i-ep-Document style="color: var(--accent-blue)" v-else />
-              </el-icon>
+            <!-- 全部加载完毕提示 -->
+            <div
+              v-if="
+                !isLoadingMore &&
+                clipboardData.length >= totalItems &&
+                clipboardData.length > 0
+              "
+              class="load-complete"
+            >
+              <span>已加载全部内容</span>
             </div>
-            <div class="item-content">
-              <div class="item-title">
-                {{ truncateText(item.content, 100) }}
-              </div>
-              <div class="item-meta">
-                <span class="meta-time">
-                  <i-ep-Clock class="meta-icon" />
-                  {{ formatTime(item.timestamp) }}
-                </span>
-                <span class="meta-size">
-                  <i-ep-Document-Checked class="meta-icon" /> {{ item.size }}
-                </span>
-                <span class="meta-type" :class="`type-${item.type}`">
-                  <i-ep-InfoFilled class="meta-icon" />
-                  {{ getTypeLabel(item.type) }}
-                </span>
-                <span
-                  v-if="item.is_favorite"
-                  class="meta-type"
-                  :class="`type-favorite`"
-                >
-                  <i-ep-Star class="meta-icon" />
-                  收藏
-                </span>
-              </div>
-            </div>
-            <div class="item-actions">
-              <el-button
-                class="item-action-btn"
-                @click.stop="selectItem(item)"
-                title="查看"
-              >
-                <i-ep-view />
-              </el-button>
-              <el-button
-                class="item-action-btn"
-                @click.stop="toggleFavorite(item, $event)"
-                :title="item.is_favorite ? '取消收藏' : '收藏'"
-              >
-                <i-ep-Star class="icon-color" />
-              </el-button>
-              <el-button
-                class="item-action-btn"
-                @click.stop="deleteItem(item.id, $event)"
-                title="删除"
-              >
-                <i-ep-Delete />
-              </el-button>
-            </div>
-          </div>
-          <!-- 全部加载完毕提示 -->
-          <div
-            v-if="
-              !isLoadingMore &&
-              clipboardData.length >= totalItems &&
-              clipboardData.length > 0
-            "
-            class="load-complete"
-          >
-            <span>已加载全部内容</span>
           </div>
         </template>
       </div>
@@ -1091,7 +1169,7 @@ const deleteBatchItems = () => {
   border: 2px solid var(--border-light);
   border-radius: 10px;
   padding: 14px;
-  margin-bottom: 13px;
+  margin: 10px 20px;
   cursor: pointer;
   transition: all 0.25s ease;
   position: relative;
@@ -1306,5 +1384,23 @@ const deleteBatchItems = () => {
   font-size: 13px;
   border-top: 1px dashed var(--border-light);
   margin-top: 4px;
+}
+
+/* 虚拟滚动占位元素 */
+.virtual-scroll-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+}
+
+/* 可见项目容器 */
+.virtual-scroll-content {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  will-change: transform; /* 优化性能 */
 }
 </style>
