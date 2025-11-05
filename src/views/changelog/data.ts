@@ -9,6 +9,20 @@ export interface ChangelogItem {
 
 export const changelogData: ChangelogItem[] = [
   {
+    version: "v1.3.0",
+    date: "2025-11-05", // 请替换为实际发布日期
+    categories: [
+      {
+        name: "性能优化",
+        items: ["引入虚拟滚动技术，提升大量剪贴板记录时的渲染性能"],
+      },
+      {
+        name: "优化",
+        items: ["调整剪贴板记录最长保存时间设置"],
+      }
+    ],
+  },
+  {
     version: "v1.2.1",
     date: "2025-10-12",
     categories: [

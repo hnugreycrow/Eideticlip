@@ -21,7 +21,7 @@ const openAboutDialog = () => {
 };
 
 const openGithub = () => {
-  window.ipcRenderer.invoke('open-external-url', 'https://github.com/HNUGreycrow/Eideticlip');
+  window.ipcRenderer.invoke('open-external-url', 'https://github.com/hnugreycrow/Eideticlip');
 };
 
 defineExpose({
