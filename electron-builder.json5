@@ -14,7 +14,7 @@
   "publish": [
     {
       "provider": "github",
-      "owner": "hungreycrow",
+      "owner": "hnugreycrow",
       "repo": "Eideticlip"
     }
   ],
