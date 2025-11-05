@@ -216,14 +216,14 @@ onUnmounted(() => {
           <div class="setting-label">
             <span>数据保存时间</span>
             <div class="setting-description">
-              设置剪贴板记录的保存天数（1-30天），每次启动时会自动删除过期记录，收藏的记录不会被清除
+              设置剪贴板记录的保存天数（1-7天），每次启动时会自动删除过期记录，收藏的记录不会被清除
             </div>
           </div>
           <div style="display: flex; align-items: center; gap: 12px;">
             <el-input-number
               v-model="dataRetentionDays"
               :min="1"
-              :max="30"
+              :max="7"
               :step="1"
               step-strictly
               @change="handleDataRetentionChange"
