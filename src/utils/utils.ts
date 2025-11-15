@@ -178,3 +178,14 @@ export const getTypeLabel = (type: string) => {
   };
   return labels[type] || "文件";
 };
+
+/**
+ * 截断超长文本，超出部分追加 "..."
+ * @param {string} text - 原始文本
+ * @param {number} maxLength - 保留最大长度
+ * @returns {string} 截断后的结果
+ */
+export const truncateText = (text: string, maxLength: number) => {
+  if (!text || typeof text !== "string") return "";
+  return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
+};

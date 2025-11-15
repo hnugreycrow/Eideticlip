@@ -1,108 +1,55 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted, watch } from "vue";
+import { ref, onMounted, onUnmounted, watch, onActivated } from "vue";
 import DetailPanel from "./components/DetailPanel.vue";
 import { ClipboardItem } from "@/utils/type";
-import {
-  formatSize,
-  getContentType,
-  formatTime,
-  getTypeLabel,
-} from "@/utils/utils";
+import { formatTime, getTypeLabel, truncateText } from "@/utils/utils";
+import { useSearch } from "./composables/useSearch";
+import { useVirtualScroll } from "./composables/useVirtualScroll";
+import { useSelection } from "./composables/useSelection";
+import { useClipboardStore } from "@/stores/clipboardStore";
+import { storeToRefs } from "pinia";
 
 // 定义组件名称，用于keep-alive识别
 defineOptions({
   name: "clipboard",
 });
 
-const activeFilter = ref("all");
-const searchQuery = ref("");
-// 添加防抖后的搜索查询
-const debouncedSearchQuery = ref("");
+const clipboardStore = useClipboardStore();
+const { clipboardData, isLoadingMore, activeFilter, totalItems, currentPage } =
+  storeToRefs(clipboardStore);
+
+// 搜索功能
+const { searchQuery, filteredData } = useSearch(() => clipboardData.value);
+
+// 选择功能
+const {
+  selectedIds,
+  isSelectionMode,
+  isAllSelected,
+  isIndeterminate,
+  selectedCount,
+  toggleSelectionMode,
+  toggleItemSelection,
+  toggleSelectAll,
+} = useSelection(() => filteredData.value);
+
+// 虚拟滚动
+const { contentListRef, virtualScroll, visibleItems, handleScroll } =
+  useVirtualScroll(() => filteredData.value);
+
 const selectedItem = ref<ClipboardItem | null>(null);
 const clipboardWatcherActive = ref(true); // 默认开启剪贴板监听
 let clipboardWatcherCleanup: (() => void) | null = null; // 剪贴板监听清理函数
-
-// 剪贴板数据
-const clipboardData = ref<ClipboardItem[]>([]);
-
-// 批量选择相关状态
-const selectedIds = ref<Set<number>>(new Set());
-const isSelectionMode = ref(false);
 
 // 监听类型过滤器变化，重新加载数据
 watch(activeFilter, (newType) => {
   // 切换类型时，重置页码并重新加载数据
   currentPage.value = 1;
-  loadClipboardHistory(1, false, newType);
+  clipboardStore.loadClipboardHistory(1, false, newType);
 });
-
-// 搜索防抖定时器
-let searchDebounceTimer: number | null = null;
-
-// 实现搜索防抖功能
-watch(searchQuery, (newValue) => {
-  // 清除之前的定时器
-  if (searchDebounceTimer !== null) {
-    clearTimeout(searchDebounceTimer);
-  }
-
-  // 设置新的定时器，300ms后更新防抖后的搜索查询
-  searchDebounceTimer = window.setTimeout(() => {
-    debouncedSearchQuery.value = newValue;
-    searchDebounceTimer = null;
-  }, 300);
-});
-
-/**
- * 计算过滤后的剪贴板数据
- * @returns {ClipboardItem[]} 过滤后的项目列表
- */
-const getClipboardData = computed(() => {
-  const query = debouncedSearchQuery.value.trim().toLowerCase();
-
-  // 数据库已经按类型过滤，这里只需要处理搜索查询
-  if (!query) {
-    // 没有搜索查询，直接返回数据库过滤后的结果
-    return clipboardData.value;
-  }
-
-  // 有搜索查询时，在数据库过滤结果上进行内容搜索
-  // 优化：对于大量数据，使用索引检查而不是includes可以提高性能
-  return clipboardData.value.filter((item) => {
-    if (!item.content || typeof item.content !== "string") return false;
-    const lowerContent = item.content.toLowerCase();
-    return lowerContent.indexOf(query) !== -1;
-  });
-});
-
-/**
- * 计算是否全选
- */
-const isAllSelected = computed(() => {
-  const currentData = getClipboardData.value;
-  return (
-    currentData.length > 0 &&
-    currentData.every((item) => selectedIds.value.has(item.id))
-  );
-});
-
-/**
- * 计算是否部分选中
- */
-const isIndeterminate = computed(() => {
-  const currentData = getClipboardData.value;
-  const selectedCount = currentData.filter((item) =>
-    selectedIds.value.has(item.id)
-  ).length;
-  return selectedCount > 0 && selectedCount < currentData.length;
-});
-
-/**
- * 计算选中的项目数量
- */
-const selectedCount = computed(() => selectedIds.value.size);
 
 const isOpen = ref(false);
+
 /**
  * 选择剪贴板项目
  * @param {ClipboardItem} item - 待选择的项目
@@ -185,262 +132,6 @@ const copyItem = (item: ClipboardItem, event?: Event) => {
 };
 
 /**
- * 删除剪贴板项目
- * @param {ClipboardItem | number} itemOrId - 待删除的项目或项目ID
- * @param {Event} [event] - 可选的事件对象，用于阻止事件冒泡
- * @returns {void}
- */
-const deleteItem = (itemOrId: ClipboardItem | number, event?: Event) => {
-  if (event) event.stopPropagation();
-
-  const id = typeof itemOrId === "number" ? itemOrId : itemOrId.id;
-
-  // 先在本地移除对应项
-  const index = clipboardData.value.findIndex((item) => item.id === id);
-  if (index !== -1) {
-    clipboardData.value.splice(index, 1);
-    // 更新总数
-    totalItems.value -= 1;
-
-    // 如果当前选中的是被删除的项目，则清空选中
-    if (selectedItem.value?.id === id) {
-      selectedItem.value = null;
-    }
-
-    ElMessage({
-      message: "删除成功",
-      type: "success",
-    });
-  }
-
-  // 从数据库中删除（后台操作，不影响用户体验）
-  window.clipboard
-    .deleteItem(id)
-    .then((success) => {
-      if (!success) {
-        console.error("删除剪贴板项目失败");
-        // 如果数据库删除失败，重新加载数据以保持一致性
-        loadClipboardHistory();
-      }
-    })
-    .catch((error) => {
-      console.error("删除剪贴板项目出错:", error);
-      // 发生错误时重新加载数据以保持一致性
-      loadClipboardHistory();
-      ElMessage({
-        message: "删除失败，请重试",
-        type: "error",
-      });
-    });
-};
-
-/**
- * 清空所有剪贴板项目
- * @returns {void}
- */
-const clearAll = () => {
-  ElMessageBox.confirm("确定要清空所有记录吗?（包括收藏记录）", "Warning", {
-    confirmButtonText: "确认",
-    cancelButtonText: "取消",
-    type: "warning",
-  }).then(() => {
-    // 从数据库中清空所有记录
-    window.clipboard
-      .clearAll()
-      .then((success) => {
-        if (success) {
-          // 清空本地数据
-          clipboardData.value = [];
-          selectedItem.value = null;
-          // 更新总数
-          totalItems.value = 0;
-          ElMessage({
-            message: "已清空所有记录",
-            type: "success",
-          });
-        } else {
-          console.error("清空剪贴板历史失败");
-          ElMessage({
-            message: "清空失败",
-            type: "error",
-          });
-        }
-      })
-      .catch((error) => {
-        console.error("清空剪贴板历史出错:", error);
-        ElMessage({
-          message: "清空失败",
-          type: "error",
-        });
-      });
-  });
-};
-
-/**
- * 截断超长文本，超出部分追加 "..."
- * @param {string} text - 原始文本
- * @param {number} maxLength - 保留最大长度
- * @returns {string} 截断后的结果
- */
-const truncateText = (text: string, maxLength: number) => {
-  if (!text || typeof text !== "string") return "";
-  return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
-};
-
-// 添加新的剪贴板项目
-const addClipboardItem = async (content: string) => {
-  // 检查内容是否已存在
-  const exists = clipboardData.value.some((item) => item.content === content);
-  if (exists) return;
-
-  // 确定内容类型
-  const type = getContentType(content);
-
-  // 检查当前筛选类型，如果不是"all"且类型不匹配，则不添加到当前视图
-  const shouldAddToCurrentView =
-    activeFilter.value === "all" ||
-    activeFilter.value === type ||
-    (activeFilter.value === "favorite" && false); // 收藏类型需要单独处理
-
-  // 计算大小
-  const size = formatSize(new Blob([content]).size);
-
-  // 创建新项目
-  let newItem: ClipboardItem = {
-    id: Date.now(),
-    type,
-    content,
-    timestamp: new Date(),
-    size,
-  };
-
-  // 保存到数据库并获取生成的ID
-  try {
-    const savedItemId = await saveClipboardItem(newItem);
-    if (savedItemId) {
-      // 确保savedItemId是一个有效的ID
-      if (typeof savedItemId === "number") {
-        newItem.id = savedItemId;
-      } else {
-        console.error("保存项目时返回的ID无效");
-      }
-
-      // 只有当类型匹配当前筛选条件时，才添加到当前视图
-      if (shouldAddToCurrentView) {
-        // 使用返回的项目id
-        clipboardData.value = [newItem, ...clipboardData.value];
-        // 更新总数
-        totalItems.value += 1;
-      }
-    } else {
-      // 如果保存失败，重新加载数据以保持一致性
-      loadClipboardHistory();
-    }
-  } catch (error) {
-    console.error("添加剪贴板项目失败:", error);
-    // 保存失败时重新加载数据
-    loadClipboardHistory();
-  }
-};
-
-/**
- * 保存单个剪贴板项到数据库
- * @param {ClipboardItem} item - 待保存的数据
- * @returns {Promise<number | null>} 返回保存后的项目ID（包含数据库生成的ID）
- */
-const saveClipboardItem = async (
-  item: ClipboardItem
-): Promise<number | null> => {
-  try {
-    const savedItemId = await window.clipboard.saveItem(item);
-    return savedItemId;
-  } catch (error) {
-    console.error("保存剪贴板项目出错:", error);
-    return null;
-  }
-};
-
-// 分页加载配置
-const pageSize = ref(50); // 每页加载的项目数量
-const currentPage = ref(1); // 当前页码
-const totalItems = ref(0); // 总项目数
-const isLoadingMore = ref(false); // 是否正在加载更多
-
-/**
- * 分页加载剪贴板历史
- * @param {number} [page=1] - 页码
- * @param {boolean} [append=false] - 是否追加模式
- * @param {string} [type] - 筛选类型
- * @returns {Promise<void>}
- */
-const loadClipboardHistory = (
-  page = 1,
-  append = false,
-  type = activeFilter.value
-) => {
-  isLoadingMore.value = true;
-  currentPage.value = page;
-
-  // 获取总数和历史记录，传入当前选中的类型
-  window.clipboard
-    .getHistory(page, pageSize.value, type)
-    .then((result) => {
-      if (result && result.total !== undefined) {
-        totalItems.value = result.total;
-      }
-      // console.log(result);
-      const history = result?.items || [];
-
-      if (history && Array.isArray(history) && history.length > 0) {
-        // 转换日期字符串为Date对象
-        const processedHistory = history.map((item) => ({
-          ...item,
-          timestamp: new Date(item.timestamp),
-        }));
-
-        if (append && page > 1) {
-          // 追加模式：添加到现有数据末尾
-          clipboardData.value = [...clipboardData.value, ...processedHistory];
-        } else {
-          // 替换模式：完全替换现有数据
-          clipboardData.value = processedHistory;
-        }
-
-        console.log(
-          "已从数据库加载剪贴板历史:",
-          processedHistory.length,
-          "条记录"
-        );
-      } else if (!append) {
-        console.log("数据库中没有剪贴板历史记录");
-        clipboardData.value = [];
-      }
-      isLoadingMore.value = false;
-    })
-    .catch((error) => {
-      console.error("从数据库加载剪贴板历史出错:", error);
-      ElMessage({
-        message: "加载历史记录失败",
-        type: "error",
-        plain: true,
-      });
-      isLoadingMore.value = false;
-    });
-};
-
-/**
- * 加载更多剪贴板历史数据
- * @returns {void}
- */
-const loadMoreData = () => {
-  if (isLoadingMore.value) return;
-  if (clipboardData.value.length >= totalItems.value) return;
-
-  const nextPage = currentPage.value + 1;
-  loadClipboardHistory(nextPage, true, activeFilter.value);
-};
-
-/**
  * 启动剪贴板监听
  * @returns {void}
  */
@@ -458,7 +149,7 @@ const startClipboardWatcher = () => {
       // 设置变化回调
       clipboardWatcherCleanup = window.clipboard.onChanged(async (content) => {
         if (content && content.trim() !== "") {
-          await addClipboardItem(content);
+          await clipboardStore.addClipboardItem(truncateText(content, 3000));
         }
       });
     })
@@ -488,81 +179,10 @@ const stopClipboardWatcher = () => {
   }
 };
 
-// 滚动相关变量和引用
-const contentListRef = ref<HTMLElement | null>(null);
-const scrollThreshold = 200; // 距离底部多少像素时触发加载更多
-
-// 虚拟滚动相关状态
-const virtualScroll = ref({
-  startIndex: 0, // 可见区域的起始索引
-  endIndex: 0, // 可见区域的结束索引
-  visibleCount: 0, // 可见项目数量
-  itemHeight: 100, // 每个项目的大概高度（根据你的CSS调整）
-  containerHeight: 0, // 容器高度
-  totalHeight: 0, // 所有项目的总高度
-});
-
-// 计算可见项目
-const visibleItems = computed(() => {
-  return getClipboardData.value.slice(
-    virtualScroll.value.startIndex,
-    virtualScroll.value.endIndex + 1
-  );
-});
-
-/**
- * 处理滚动事件，实现懒加载更多数据
- * @returns {void}
- */
-const handleScroll = () => {
-  if (!contentListRef.value) return;
-
-  const scrollTop = contentListRef.value.scrollTop;
-  const containerHeight = contentListRef.value.clientHeight;
-
-  // 更新容器高度
-  virtualScroll.value.containerHeight = containerHeight;
-
-  // 计算可见项目数量
-  const visibleCount =
-    Math.ceil(containerHeight / virtualScroll.value.itemHeight) + 4;
-  virtualScroll.value.visibleCount = visibleCount;
-
-  // 计算起始索引
-  const startIndex = Math.floor(scrollTop / virtualScroll.value.itemHeight);
-  virtualScroll.value.startIndex = Math.max(0, startIndex - 1); // 提前一个项目渲染
-
-  // 计算结束索引
-  const endIndex = Math.min(
-    getClipboardData.value.length - 1,
-    virtualScroll.value.startIndex + visibleCount
-  );
-  virtualScroll.value.endIndex = endIndex;
-
-  // 计算总高度（用于撑开滚动容器）
-  virtualScroll.value.totalHeight =
-    getClipboardData.value.length * virtualScroll.value.itemHeight;
-
-  // 原有的懒加载逻辑
-  const scrollHeight = contentListRef.value.scrollHeight;
-  const distanceToBottom = scrollHeight - scrollTop - containerHeight;
-
-  if (distanceToBottom < scrollThreshold && !isLoadingMore.value) {
-    loadMoreData();
-  }
-};
-
-// 监听数据变化和容器高度变化，更新虚拟滚动参数
-watch([getClipboardData, () => virtualScroll.value.containerHeight], () => {
-  virtualScroll.value.totalHeight =
-    getClipboardData.value.length * virtualScroll.value.itemHeight;
-  handleScroll();
-});
-
 // 组件挂载时启动监听，加载历史记录，卸载时停止监听
 onMounted(() => {
   // 加载历史记录（只加载第一页）
-  loadClipboardHistory(1, false, activeFilter.value);
+  clipboardStore.loadClipboardHistory(1, false, activeFilter.value);
   // 启动剪贴板监听
   startClipboardWatcher();
 
@@ -580,6 +200,12 @@ onUnmounted(() => {
   window.removeEventListener("resize", handleScroll);
 });
 
+onActivated(() => {
+  // 调用时机为首次挂载
+  // 以及每次从缓存中被重新插入时
+  handleScroll();
+});
+
 // 导出数据
 const exportData = () => {
   const data = JSON.stringify(clipboardData.value, null, 2);
@@ -591,41 +217,6 @@ const exportData = () => {
   a.click();
   URL.revokeObjectURL(url);
   // 这里可以添加导出成功的提示
-};
-
-/**
- * 切换选择模式
- */
-const toggleSelectionMode = () => {
-  isSelectionMode.value = !isSelectionMode.value;
-  if (!isSelectionMode.value) {
-    selectedIds.value.clear();
-  }
-};
-
-/**
- * 切换单个项目的选中状态
- */
-const toggleItemSelection = (itemId: number) => {
-  if (selectedIds.value.has(itemId)) {
-    selectedIds.value.delete(itemId);
-  } else {
-    selectedIds.value.add(itemId);
-  }
-};
-
-/**
- * 全选/取消全选
- */
-const toggleSelectAll = () => {
-  const currentData = getClipboardData.value;
-  if (isAllSelected.value) {
-    // 取消全选
-    currentData.forEach((item) => selectedIds.value.delete(item.id));
-  } else {
-    // 全选
-    currentData.forEach((item) => selectedIds.value.add(item.id));
-  }
 };
 
 /**
@@ -683,7 +274,7 @@ const deleteBatchItems = () => {
         if (!result.success && result.failedIds.length > 0) {
           console.error("部分项目删除失败:", result.failedIds);
           // 如果有删除失败的项目，重新加载数据以保持一致性
-          loadClipboardHistory();
+          clipboardStore.loadClipboardHistory();
           ElMessage({
             message: `${result.failedIds.length} 个项目删除失败，已重新加载数据`,
             type: "warning",
@@ -693,7 +284,7 @@ const deleteBatchItems = () => {
       .catch((error) => {
         console.error("批量删除出错:", error);
         // 发生错误时重新加载数据以保持一致性
-        loadClipboardHistory();
+        clipboardStore.loadClipboardHistory();
         ElMessage({
           message: "删除失败，已重新加载数据",
           type: "error",
@@ -709,7 +300,7 @@ const deleteBatchItems = () => {
       <!-- 内容头部 -->
       <div class="content-header">
         <div class="header-left">
-          <h1 class="header-title">剪切板历史</h1>
+          <h1 class="header-title">剪贴板历史</h1>
           <span class="header-stats"
             >共 {{ totalItems }} 条记录 (已加载
             {{ clipboardData.length }} 条)</span
@@ -766,7 +357,7 @@ const deleteBatchItems = () => {
               </el-button>
               <template #dropdown>
                 <el-dropdown-menu>
-                  <el-dropdown-item @click="clearAll">
+                  <el-dropdown-item @click="clipboardStore.clearAll">
                     <i-ep-delete class="el-icon--left" />清空
                   </el-dropdown-item>
                   <el-dropdown-item @click="exportData">
@@ -908,6 +499,11 @@ const deleteBatchItems = () => {
                     <i-ep-Clock class="meta-icon" />
                     {{ formatTime(item.timestamp) }}
                   </span>
+                  <!-- 添加id信息展示 -->
+                  <span class="meta-id">
+                    <i-ep-Key class="meta-icon" />
+                    ID: {{ item.id }}
+                  </span>
                   <span class="meta-size">
                     <i-ep-Document-Checked class="meta-icon" /> {{ item.size }}
                   </span>
@@ -942,7 +538,7 @@ const deleteBatchItems = () => {
                 </el-button>
                 <el-button
                   class="item-action-btn"
-                  @click.stop="deleteItem(item.id, $event)"
+                  @click.stop="clipboardStore.deleteItem(item.id, $event)"
                   title="删除"
                 >
                   <i-ep-Delete />
@@ -978,7 +574,7 @@ const deleteBatchItems = () => {
       :is-open="isOpen"
       @close="closeDetail"
       @copy="copyItem"
-      @delete="deleteItem"
+      @delete="clipboardStore.deleteItem"
       @favorite="toggleFavorite"
     />
   </div>
@@ -1286,7 +882,8 @@ const deleteBatchItems = () => {
 
   .meta-time,
   .meta-size,
-  .meta-type {
+  .meta-type,
+  .meta-id {
     display: inline-flex;
     align-items: center;
   }
