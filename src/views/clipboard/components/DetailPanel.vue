@@ -20,7 +20,7 @@
       </div>
 
       <div class="detail-text">
-        <p>{{ displayContent }}</p>
+        <HighlightedText :content="item.content" :type="props.item?.type" />
       </div>
 
       <div class="detail-meta">
@@ -64,6 +64,7 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
+import HighlightedText from './HighlightedText.vue'
 import { ClipboardItem } from "@/utils/type";
 import { formatTime, getTypeLabel } from "@/utils/utils";
 
@@ -216,7 +217,6 @@ const toggleFavorite = (item: Item) => {
   background: var(--bg-tertiary);
   border-radius: 8px;
   padding: 16px;
-  padding-top: 0px;
   font-size: 14px;
   line-height: 1.6;
   word-break: break-all;
