@@ -69,6 +69,7 @@ watch(
 );
 
 const isOpen = ref(false);
+const showAllContent = ref(false);
 
 /**
  * 选择剪贴板项目
@@ -76,6 +77,7 @@ const isOpen = ref(false);
  * @returns {void}
  */
 const selectItem = (item: ClipboardItem) => {
+  showAllContent.value = false;
   selectedItem.value = item;
   isOpen.value = true;
 };
@@ -85,6 +87,7 @@ const selectItem = (item: ClipboardItem) => {
  * @returns {void}
  */
 const closeDetail = () => {
+  showAllContent.value = false;
   selectedItem.value = null;
   isOpen.value = false;
 };
@@ -477,7 +480,7 @@ const deleteBatchItems = () => {
               @click="
                 isSelectionMode
                   ? toggleItemSelection(item.id)
-                  : (copyItem(item, $event), (selectedItem = item))
+                  : (copyItem(item, $event), selectItem(item))
               "
             >
               <!-- 批量选择复选框 -->
@@ -591,6 +594,7 @@ const deleteBatchItems = () => {
     <DetailPanel
       :item="selectedItem"
       :is-open="isOpen"
+      v-model:showAllContent="showAllContent"
       @close="closeDetail"
       @copy="copyItem"
       @delete="clipboardStore.deleteItem"

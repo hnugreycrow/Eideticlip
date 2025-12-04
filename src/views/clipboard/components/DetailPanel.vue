@@ -21,13 +21,16 @@
 
       <div class="detail-text">
         <HighlightedText :content="displayContent" :type="props.item?.type" />
-        <el-button
-          v-if="item.content.length > MAX_CONTENT_LENGTH"
-          link
-          type="primary"
-          @click="showAllContent = !showAllContent">
-          {{ showAllContent ? "收起" : "展开" }}
-        </el-button>
+        <div class="expend-button">
+          <el-button
+            v-if="item.content.length > MAX_CONTENT_LENGTH"
+            link
+            type="primary"
+            @click="showAllContent = !showAllContent"
+          >
+            {{ showAllContent ? "收起" : "展开" }}
+          </el-button>
+        </div>
       </div>
 
       <div class="detail-meta">
@@ -71,7 +74,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import HighlightedText from './HighlightedText.vue'
+import HighlightedText from "./HighlightedText.vue";
 import { ClipboardItem } from "@/utils/type";
 import { formatTime, getTypeLabel } from "@/utils/utils";
 
@@ -89,6 +92,8 @@ const emit = defineEmits<{
   favorite: [item: Item];
 }>();
 
+const showAllContent = defineModel<boolean>("showAllContent");
+
 // 优化：使用计算属性缓存格式化结果，避免重复计算
 const formattedTime = computed(() => {
   return props.item ? formatTime(props.item.timestamp) : "";
@@ -100,7 +105,6 @@ const typeLabel = computed(() => {
 
 // 优化：截断长文本内容，避免渲染大量文本导致的性能问题
 const MAX_CONTENT_LENGTH = 3000;
-const showAllContent = ref(false);
 const displayContent = computed(() => {
   if (!props.item?.content) return "";
   const content = props.item.content;
@@ -296,5 +300,12 @@ const toggleFavorite = (item: Item) => {
 .empty-text {
   font-size: 14px;
   color: var(--text-secondary);
+}
+
+.expend-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 10px;
 }
 </style>

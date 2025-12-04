@@ -62,7 +62,7 @@ export const useClipboardStore = defineStore('clipboard', {
 
     // 添加新剪贴板项
     async addClipboardItem(content: string) {
-      const exists = this.clipboardData[0]?.content === content;
+      const exists = this.clipboardData.some(item => item.content === content);
       if (exists) return;
 
       const type = getContentType(content);
