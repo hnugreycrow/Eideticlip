@@ -48,6 +48,26 @@ watch(activeFilter, (newType) => {
   clipboardStore.loadClipboardHistory(1, false, newType);
 });
 
+// 监听 store 的 items 变化
+watch(
+  () => clipboardData,
+  (newItems, oldItems) => {
+    // 当 items 被清空时
+    if (newItems.value.length === 0 && oldItems.value.length > 0) {
+      selectedItem.value = null;
+    }
+    
+    // 如果当前选中的项目不在新列表中，也需要重置
+    if (selectedItem.value) {
+      const stillExists = newItems.value.some(item => item.id === selectedItem.value?.id);
+      if (!stillExists) {
+        selectedItem.value = null;
+      }
+    }
+  },
+  { deep: true }
+);
+
 const isOpen = ref(false);
 
 /**
@@ -149,7 +169,7 @@ const startClipboardWatcher = () => {
       // 设置变化回调
       clipboardWatcherCleanup = window.clipboard.onChanged(async (content) => {
         if (content && content.trim() !== "") {
-          await clipboardStore.addClipboardItem(truncateText(content, 3000));
+          await clipboardStore.addClipboardItem(content);
         }
       });
     })
@@ -501,7 +521,6 @@ const deleteBatchItems = () => {
                   </span>
                   <!-- 添加id信息展示 -->
                   <span class="meta-id">
-                    <i-ep-Key class="meta-icon" />
                     ID: {{ item.id }}
                   </span>
                   <span class="meta-size">

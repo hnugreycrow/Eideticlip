@@ -9,6 +9,30 @@ export interface ChangelogItem {
 
 export const changelogData: ChangelogItem[] = [
   {
+    version: "v1.4.0",
+    date: "2025-12-04", // 请替换为实际发布日期
+    categories: [
+      {
+        name: "新增",
+        items: [
+          "详情页新增展开/收起按钮，改善页面交互体验",
+          "详情界面显示代码高亮",
+        ],
+      },
+      {
+        name: "优化",
+        items: [
+          "优化路由结构，使用统一的 meta.keepAlive 方式管理缓存",
+          "重构 keep-alive 缓存逻辑，自动识别需要缓存的页面，提高代码可维护性",
+        ],
+      },
+      {
+        name: "修复",
+        items: ["删除操作后未清空选中项的问题"],
+      },
+    ],
+  },
+  {
     version: "v1.3.0",
     date: "2025-11-05", // 请替换为实际发布日期
     categories: [
@@ -19,7 +43,7 @@ export const changelogData: ChangelogItem[] = [
       {
         name: "优化",
         items: ["调整剪贴板记录最长保存时间设置"],
-      }
+      },
     ],
   },
   {
@@ -42,9 +66,7 @@ export const changelogData: ChangelogItem[] = [
       },
       {
         name: "优化",
-        items: [
-          "剪切记录界面右上角按钮布局优化",
-        ],
+        items: ["剪切记录界面右上角按钮布局优化"],
       },
     ],
   },
@@ -58,9 +80,7 @@ export const changelogData: ChangelogItem[] = [
       },
       {
         name: "优化",
-        items: [
-          "窗口最大化/还原图标切换",
-        ],
+        items: ["窗口最大化/还原图标切换"],
       },
     ],
   },
@@ -74,11 +94,7 @@ export const changelogData: ChangelogItem[] = [
       },
       {
         name: "优化",
-        items: [
-          "禁止应用多开",
-          "优化设置界面的滚动部分",
-          "部分样式优化",
-        ],
+        items: ["禁止应用多开", "优化设置界面的滚动部分", "部分样式优化"],
       },
     ],
   },

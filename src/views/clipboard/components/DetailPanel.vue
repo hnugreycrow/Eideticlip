@@ -20,7 +20,14 @@
       </div>
 
       <div class="detail-text">
-        <HighlightedText :content="item.content" :type="props.item?.type" />
+        <HighlightedText :content="displayContent" :type="props.item?.type" />
+        <el-button
+          v-if="item.content.length > MAX_CONTENT_LENGTH"
+          link
+          type="primary"
+          @click="showAllContent = !showAllContent">
+          {{ showAllContent ? "收起" : "展开" }}
+        </el-button>
       </div>
 
       <div class="detail-meta">
@@ -63,7 +70,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import HighlightedText from './HighlightedText.vue'
 import { ClipboardItem } from "@/utils/type";
 import { formatTime, getTypeLabel } from "@/utils/utils";
@@ -92,14 +99,14 @@ const typeLabel = computed(() => {
 });
 
 // 优化：截断长文本内容，避免渲染大量文本导致的性能问题
-const MAX_CONTENT_LENGTH = 5000;
+const MAX_CONTENT_LENGTH = 3000;
+const showAllContent = ref(false);
 const displayContent = computed(() => {
   if (!props.item?.content) return "";
   const content = props.item.content;
-  if (content.length > MAX_CONTENT_LENGTH) {
-    return (
-      content.substring(0, MAX_CONTENT_LENGTH) + "...\n\n[内容过长，已截断显示]"
-    );
+  // 如果内容过长且未选择显示全部，则截断内容
+  if (!showAllContent.value && content.length > MAX_CONTENT_LENGTH) {
+    return content.slice(0, MAX_CONTENT_LENGTH) + "...";
   }
   return content;
 });

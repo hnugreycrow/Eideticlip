@@ -1,6 +1,18 @@
 <script setup lang="ts">
 import Header from "./header/index.vue";
 import Sidebar from "./sidebar/index.vue";
+import { useRouter } from "vue-router";
+import { computed } from "vue";
+
+const router = useRouter();
+
+// 自动找出所有 meta.keepAlive = true 的路由
+const cacheRoutes = computed<string[]>(() =>
+  router.getRoutes()
+    .filter(r => r.meta?.keepAlive)
+    .map(r => r.name) 
+    .filter((name): name is string => typeof name === "string")
+);
 </script>
 
 <template>
@@ -12,10 +24,11 @@ import Sidebar from "./sidebar/index.vue";
       <el-container class="main-container">
         <Sidebar />
         <el-main>
-          <router-view v-slot="{ Component }">
-            <keep-alive :include="['clipboard']">
+          <router-view v-slot="{ Component, route }">
+            <keep-alive v-if="route.meta.keepAlive" :include="cacheRoutes">
               <component :is="Component" />
             </keep-alive>
+            <component v-else :is="Component" />
           </router-view>
         </el-main>
       </el-container>
