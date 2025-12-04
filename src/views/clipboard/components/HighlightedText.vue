@@ -10,7 +10,14 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, watch } from "vue";
-import hljs from "highlight.js";
+import hljs from "highlight.js/lib/core";
+import javascript from "highlight.js/lib/languages/javascript";
+import typescript from "highlight.js/lib/languages/typescript";
+import json from "highlight.js/lib/languages/json";
+import xml from "highlight.js/lib/languages/xml";
+import css from "highlight.js/lib/languages/css";
+import bash from "highlight.js/lib/languages/bash";
+import python from "highlight.js/lib/languages/python";
 import { themeService } from "@/utils/theme";
 // 按需加载：通过 ?url 获取样式文件的构建后地址
 import githubDarkUrl from "highlight.js/styles/github-dark.css?url";
@@ -24,6 +31,15 @@ const props = defineProps<{
 }>();
 
 const isCode = computed(() => props.type === "code");
+
+// 仅注册常用语言，降低自动检测开销
+hljs.registerLanguage("javascript", javascript);
+hljs.registerLanguage("typescript", typescript);
+hljs.registerLanguage("json", json);
+hljs.registerLanguage("xml", xml);
+hljs.registerLanguage("css", css);
+hljs.registerLanguage("bash", bash);
+hljs.registerLanguage("python", python);
 
 // 根据主题动态切换 highlight.js 的样式文件
 const HLJS_LINK_ID = "hljs-theme-css";
@@ -70,8 +86,13 @@ function escapeHtml(str: string) {
  */
 const highlightedCode = computed(() => {
   const txt = props.content || "";
+  const MAX_CODE_HL_LENGTH = 6000;
   try {
     if (!txt) return "";
+    // 长文本降级：超出阈值时不做代码高亮，避免卡顿
+    if (txt.length > MAX_CODE_HL_LENGTH) {
+      return escapeHtml(txt);
+    }
     if (props.language) {
       // try using specified language
       const res = hljs.highlight(txt, { language: props.language });

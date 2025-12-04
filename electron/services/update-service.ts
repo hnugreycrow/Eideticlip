@@ -24,6 +24,7 @@ export class UpdateService {
   constructor(mainWindow: BrowserWindow, configService: ConfigService) {
     this.mainWindow = mainWindow;
     this.configService = configService;
+    void this.configService;
 
     // 1. 注册所有 autoUpdater 事件监听
     this.configureAutoUpdater();
