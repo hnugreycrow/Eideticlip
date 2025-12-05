@@ -41,6 +41,7 @@
     "perMachine": false,
     "allowToChangeInstallationDirectory": true,
     "deleteAppDataOnUninstall": true,
+    "createDesktopShortcut": false,
     "include": "installer.nsh"
   },
   "linux": {
