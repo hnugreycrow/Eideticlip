@@ -73,7 +73,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed } from "vue";
 import HighlightedText from "./HighlightedText.vue";
 import { ClipboardItem } from "@/utils/type";
 import { formatTime, getTypeLabel } from "@/utils/utils";

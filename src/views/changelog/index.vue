@@ -1,8 +1,24 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import { changelogData } from './data.ts';
+import { onMounted, ref } from 'vue';
+import { GitHubService } from './githubService';
 
-const changelog = ref(changelogData);
+const changelog = ref();
+
+// 异步获取最新的 changelog 数据
+const fetchChangelog = async () => {
+  try {
+    const data = await GitHubService.getChangelogData();
+    if (data && data.length > 0) {
+      changelog.value = data;
+    }
+  } catch (error) {
+    console.error('获取更新日志失败:', error);
+  }
+};
+
+onMounted(() => {
+  fetchChangelog();
+});
 </script>
 
 <template>
@@ -33,6 +49,7 @@ const changelog = ref(changelogData);
         </el-card>
       </el-timeline-item>
     </el-timeline>
+    <el-skeleton v-if="!changelog" :rows="5" animated />
   </div>
 </template>
 
