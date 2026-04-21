@@ -2,9 +2,9 @@
 
 ## 📝 项目简介
 
-Eideticlip 是一款基于 Electron 和 Vue 3 开发的剪贴板管理工具，能够自动记录您复制的内容，方便随时查看和重用剪贴板历史记录。这个项目是我为学习 Electron 开发而创建的小型项目，在实用性方面可能不如 Windows 自带的剪贴板历史功能便捷。
+Eideticlip 是一款基于 Electron 和 Vue 3 开发的剪贴板管理工具，能够自动记录您复制的内容，方便随时查看和重用剪贴板历史记录。
 
-![image-20251107140404130](doc/images/image-20251107140404130.png)
+这个项目是为学习 Electron 开发而创建的小型项目，在实用性方面不如 Windows 自带的剪贴板历史功能便捷。
 
 ## ✨ 主要特性
 
@@ -69,7 +69,3 @@ npm run build
 ├── public/                # 公共资源
 └── vite.config.ts         # Vite 配置
 ```
-
-## 📄 许可证
-
-[MIT](./LICENSE) © [hnugreycrow](https://www.kimi.com/chat/LICENSE)
