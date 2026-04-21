@@ -34,7 +34,7 @@
       }
     ],
     "artifactName": "${productName}-Windows-${version}-Setup.${ext}",
-    "icon": "dist/icon.ico"
+    "icon": "public/icon.ico"
   },
   "nsis": {
     "oneClick": false,
