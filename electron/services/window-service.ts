@@ -120,7 +120,7 @@ export class WindowService {
       minWidth: 800,
       minHeight: 600,
       frame: false,
-      icon: path.join(this.publicPath, "20250815110628.png"), // 窗口图标路径
+      icon: path.join(this.publicPath, "electron.svg"), // 窗口图标路径
       show: false, // 先不显示窗口，等窗口准备好了才显示，防止渲染未完成时出现白框
       webPreferences: {
         preload: this.preloadPath, // 预加载脚本路径（用于安全地在渲染进程中暴露API）

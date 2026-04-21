@@ -116,7 +116,7 @@ const remindLater = () => {
     <div class="update-content">
       <div class="update-header">
         <div class="update-icon">
-           <img src="/20250815110628.png" class="icon" alt="Logo" />
+           <img src="/electron.svg" class="icon" alt="Logo" />
         </div>
         <h3 class="update-title">新版本可用</h3>
       </div>

@@ -146,7 +146,7 @@ function initializeServices() {
   // 创建托盘服务
   trayService = new TrayService(
     windowService,
-    path.join(process.env.VITE_PUBLIC as string, "20250815110628.png")
+    path.join(process.env.VITE_PUBLIC as string, "electron.png")
   );
   trayService.createTray();
   

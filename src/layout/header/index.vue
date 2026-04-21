@@ -56,7 +56,7 @@ onUnmounted(() => {
 <template>
   <div class="titlebar">
     <div class="titlebar-left">
-      <img src="/20250815110628.png" class="app-logo"></img>
+      <img src="/electron.svg" class="app-logo"></img>
       <el-text class="app-title">Eideticlip</el-text>
     </div>
     <div class="titlebar-controls">

@@ -39,7 +39,7 @@ defineExpose({
   >
     <div class="about-content">
       <div class="logo">
-        <img src="/20250815110628.png" alt="Logo" />
+        <img src="/electron.svg" alt="Logo" />
       </div>
       <h2>Eideticlip</h2>
       <p class="version">版本: {{ appVersion }}</p>
