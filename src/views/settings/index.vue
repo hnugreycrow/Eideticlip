@@ -12,7 +12,7 @@ defineOptions({
 
 // 使用主题服务中的当前主题
 const theme = ref<ThemeType>("dark");
-const shortcut = ref("CommandOrControl+Alt+C");
+const shortcut = ref("Alt+Shift+C");
 const tempKeys = ref<string[]>([]);
 const isRecording = ref(false);
 const shortcutInput = ref();
@@ -196,8 +196,6 @@ onUnmounted(() => {
           <el-radio-group v-model="theme" @change="handleThemeChange">
             <el-radio-button label="light">浅色</el-radio-button>
             <el-radio-button label="dark">深色</el-radio-button>
-            <el-radio-button label="pink">粉色</el-radio-button>
-            <el-radio-button label="orange">橙色</el-radio-button>
           </el-radio-group>
         </div>
         <div class="setting-item">
@@ -246,7 +244,7 @@ onUnmounted(() => {
           </div>
           <el-tooltip placement="top-start">
             <template #content>
-              例如：Ctrl+Alt+C、Ctrl+Shift+V、Alt+` <br />
+              例如：Alt+Shift+C、Ctrl+Alt+`、Ctrl+Shift+V <br />
               修饰键：Ctrl、Alt、Shift、Win（任选其一或两两组合） <br />
               普通键：字母 A-Z、数字 0-9、F1-F12 等 <br />
               请不要和其他应用的快捷键冲突

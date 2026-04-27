@@ -83,226 +83,77 @@
   --fav-bg-hover: #fffbeb; /* 悬停时整行微亮 */
 }
 
-/* ===== 浅色主题（通过给 <html> 或 <body> 加 .light 类启用） ===== */
+/* ===== 浅色主题 ===== */
 :root.light {
   /* Element Plus 官方变量 */
-  --el-color-primary-rgb: 91, 147, 255;
-  --el-color-primary: #409EFF;
+  --el-color-primary-rgb: 37, 99, 235;
+  --el-color-primary: #2563eb;
 
-  --el-bg-color: #faf9f7; /* 页面背景，比纯白柔和 */
-  --el-bg-color-overlay: #f7f5f3; /* 卡片 / 弹窗 */
-  --el-bg-color-page: #f7f5f3;
+  --el-bg-color: #f8fafc;
+  --el-bg-color-overlay: #ffffff;
+  --el-bg-color-page: #f8fafc;
 
-  --el-text-color-primary: #2e2e2e;
-  --el-text-color-regular: #5c5c5c;
-  --el-text-color-secondary: #8a8a8a;
+  --el-text-color-primary: #0f172a;
+  --el-text-color-regular: #475569;
+  --el-text-color-secondary: #94a3b8;
 
-  --el-border-color: #CDD0D6;
-  --el-border-color-light: #D4D7DE;
-  --el-border-color-lighter: #DCDFE6;
+  --el-border-color: #e2e8f0;
+  --el-border-color-light: #f1f5f9;
+  --el-border-color-lighter: #f8fafc;
 
-  --el-fill-color: #f2f0ed;
-  --el-fill-color-light: #f7f5f3;
+  --el-fill-color: #f1f5f9;
+  --el-fill-color-light: #f8fafc;
   --el-fill-color-blank: #ffffff;
 
-  --el-mask-color: rgba(0, 0, 0, 0.5);
-  --el-mask-color-extra-light: rgba(0, 0, 0, 0.05);
+  --el-mask-color: rgba(15, 23, 42, 0.5);
+  --el-mask-color-extra-light: rgba(15, 23, 42, 0.05);
 
   /* 自定义语义化背景变量 */
-  --bg-primary: var(--el-bg-color); /* 页面背景 */
-  --bg-secondary: var(--el-bg-color-overlay); /* 卡片、侧边栏、弹窗背景 */
-  --bg-tertiary: var(--el-fill-color); /* 列表项、输入框背景 */
-  --bg-hover: #eef5ff; /* hover 高亮（带主题色）*/
-  --bg-active: #e5efff;
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f1f5f9;
+  --bg-hover: #eff6ff;
+  --bg-active: #dbeafe;
 
   /* 文本颜色 */
-  --text-primary: var(--el-text-color-primary);
-  --text-secondary: var(--el-text-color-regular);
-  --text-tertiary: var(--el-text-color-secondary);
-  --text-inverse: #ffffff; /* 用于浅色背景上的"反色"文字 */
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-tertiary: #94a3b8;
+  --text-inverse: #ffffff;
 
   /* 边框颜色 */
-  --border-light: var(--el-border-color-light);
-  --border-medium: var(--el-border-color);
+  --border-light: #e2e8f0;
+  --border-medium: #cbd5e1;
 
-  /* 强调色保持不变，但需要定义悬停状态 */
-  --accent-primary-hover: #1565c0; /* 按钮悬停状态，与新的accent-primary协调 */
-  
-  /* 强调色 - 浅色主题专用，更适合白色背景 */
-  --accent-primary: #409EFF; 
-  --accent-secondary: #2e7d32; /* 更深的绿色，提高对比度 */
-  --accent-tertiary: #7b1fa2; /* 更深的紫色 */
-  --accent-quaternary: #f57c00; /* 更深的橙色 */
+  /* 强调色 - 现代饱和色系 */
+  --accent-primary: #2563eb;
+  --accent-primary-hover: #1d4ed8;
+  --accent-secondary: #059669;
+  --accent-danger: #dc2626;
+  --accent-tertiary: #7c3aed;
+  --accent-quaternary: #d97706;
 
-  /* 兼容性变量（保持与其他主题一致的变量名） */
-  --accent-blue-hover: var(--accent-primary-hover);
+  /* 兼容性变量 */
   --accent-blue: var(--accent-primary);
+  --accent-blue-hover: var(--accent-primary-hover);
   --accent-green: var(--accent-secondary);
+  --accent-red: var(--accent-danger);
   --accent-purple: var(--accent-tertiary);
   --accent-yellow: var(--accent-quaternary);
 
   /* 渐变色边框变量 - 浅色主题 */
-  --gradient-active-start: var(--accent-primary);
-  --gradient-active-end: var(--el-color-primary);
+  --gradient-active-start: #2563eb;
+  --gradient-active-end: #60a5fa;
 
-  /* 收藏项目颜色 - 浅色主题专用 */
-  --favorite-bg: rgba(255, 217, 102, 0.06);
-  --favorite-border: var(--accent-quaternary);
-  --favorite-corner: var(--accent-quaternary);
+  /* 收藏项目颜色 */
+  --favorite-bg: rgba(251, 191, 36, 0.08);
+  --favorite-border: #f59e0b;
+  --favorite-corner: #f59e0b;
 
-  /* 剪贴板项目类型背景色 - 浅色主题 */
-  --type-text-bg: rgba(0, 132, 255, 0.15);
-  --type-url-bg: rgba(66, 184, 131, 0.15);
-  --type-code-bg: rgba(139, 92, 246, 0.15);
-  --type-image-bg: rgba(255, 71, 87, 0.15);
-  --type-favorite-bg: rgba(240, 192, 0, 0.20);
-}
-
-/* ===== 粉色主题 ===== */
-:root.pink {
-  /* Element Plus 官方变量 */
-  --el-color-primary-rgb: 255, 105, 180;
-  --el-color-primary: #ff69b4;
-
-  --el-bg-color: #fff0f5;
-  --el-bg-color-overlay: #fff5f8;
-  --el-bg-color-page: #fff0f5;
-
-  --el-text-color-primary: #4a2b3a;
-  --el-text-color-regular: #6d4e5c;
-  --el-text-color-secondary: #8e6b7a;
-
-  --el-border-color: #ffd1e1;
-  --el-border-color-light: #ffe4ee;
-  --el-border-color-lighter: #fff0f7;
-
-  --el-fill-color: #fff5f9;
-  --el-fill-color-light: #fffafc;
-  --el-fill-color-blank: #ffffff;
-
-  --el-mask-color: rgba(0, 0, 0, 0.5);
-  --el-mask-color-extra-light: rgba(0, 0, 0, 0.05);
-
-  /* 自定义语义化背景变量 */
-  --bg-primary: #fde8f0; /* 页面背景 */
-  --bg-secondary: #feeef3; /* 卡片、侧边栏、弹窗背景 */
-  --bg-tertiary: #fef2f6; /* 列表项、输入框背景 */
-  --bg-hover: #ffe4ee; /* hover 高亮（带主题色）*/
-  --bg-active: #ffd1e1;
-
-  /* 文本颜色 */
-  --text-primary: #4a2b3a;
-  --text-secondary: #6d4e5c;
-  --text-tertiary: #8e6b7a;
-  --text-inverse: #ffffff;
-
-  /* 收藏项目颜色 - 粉色主题专用 */
-  --favorite-bg: rgba(255, 155, 205, 0.1);
-  --favorite-border: #ff9bcd;
-  --favorite-corner: #ff9bcd;
-
-  /* 剪贴板项目类型背景色 - 粉色主题 */
-  --type-text-bg: rgba(255, 105, 180, 0.15);
-  --type-url-bg: rgba(255, 133, 162, 0.15);
-  --type-code-bg: rgba(218, 112, 214, 0.15);
-  --type-image-bg: rgba(255, 71, 87, 0.15);
-  --type-favorite-bg: rgba(255, 155, 205, 0.15);
-
-  /* 边框颜色 */
-  --border-light: #ffd1e1;
-  --border-medium: #ffb6c9;
-
-  /* 强调色 */
-  --accent-primary: #ff69b4; /* 主强调色（粉色） */
-  --accent-primary-hover: #e05a9e; /* 按钮悬停状态 */
-  --accent-secondary: #ff85a2; /* 次强调色（浅粉色） */
-  --accent-danger: #ff4757; /* 危险色（红色） */
-  --accent-tertiary: #da70d6; /* 第三强调色（紫色） */
-  
-  /* 兼容性变量（保持与其他主题一致的变量名） */
-  --accent-blue: var(--accent-primary);
-  --accent-blue-hover: var(--accent-primary-hover);
-  --accent-green: var(--accent-secondary);
-  --accent-red: var(--accent-danger);
-  --accent-purple: var(--accent-tertiary);
-  --accent-yellow: #ff8a65;
-
-  /* 渐变色边框变量 - 粉色主题 */
-  --gradient-active-start: var(--accent-primary);
-  --gradient-active-end: var(--accent-tertiary);
-}
-
-/* ===== 橙色主题 ===== */
-:root.orange {
-  /* Element Plus 官方变量 */
-  --el-color-primary-rgb: 255, 140, 0;
-  --el-color-primary: #ff8c00;
-
-  --el-bg-color: #fffaf0;
-  --el-bg-color-overlay: #fff8f0;
-  --el-bg-color-page: #fffaf0;
-
-  --el-text-color-primary: #4a3520;
-  --el-text-color-regular: #6d5a40;
-  --el-text-color-secondary: #8e7a60;
-
-  --el-border-color: #ffd9a8;
-  --el-border-color-light: #ffe4c4;
-  --el-border-color-lighter: #fff0e0;
-
-  --el-fill-color: #fff5e6;
-  --el-fill-color-light: #fffaf5;
-  --el-fill-color-blank: #ffffff;
-
-  --el-mask-color: rgba(0, 0, 0, 0.5);
-  --el-mask-color-extra-light: rgba(0, 0, 0, 0.05);
-
-  /* 自定义语义化背景变量 */
-  --bg-primary: #fffaf0; /* 页面背景 */
-  --bg-secondary: #fff5e6; /* 卡片、侧边栏、弹窗背景 */
-  --bg-tertiary: #fff0dc; /* 列表项、输入框背景 */
-  --bg-hover: #ffe8cc; /* hover 高亮（带主题色）*/
-  --bg-active: #ffd9a8;
-
-  /* 文本颜色 */
-  --text-primary: #4a3520;
-  --text-secondary: #6d5a40;
-  --text-tertiary: #8e7a60;
-  --text-inverse: #ffffff;
-
-  /* 收藏项目颜色 - 橙色主题专用 */
-  --favorite-bg: rgba(255, 160, 0, 0.1);
-  --favorite-border: #ffa000;
-  --favorite-corner: #ffa000;
-
-  /* 剪贴板项目类型背景色 - 橙色主题 */
-  --type-text-bg: rgba(255, 140, 0, 0.15);
-  --type-url-bg: rgba(255, 167, 38, 0.15);
-  --type-code-bg: rgba(230, 81, 0, 0.15);
-  --type-image-bg: rgba(255, 87, 34, 0.15);
-  --type-favorite-bg: rgba(255, 138, 101, 0.15);
-
-  /* 边框颜色 */
-  --border-light: #ffd9a8;
-  --border-medium: #ffcc80;
-
-  /* 强调色 */
-  --accent-primary: #ff8c00; /* 主强调色（橙色） */
-  --accent-primary-hover: #e67e00; /* 按钮悬停状态 */
-  --accent-secondary: #ffa726; /* 次强调色（浅橙色） */
-  --accent-danger: #ff5722; /* 危险色（红橙色） */
-  --accent-tertiary: #e65100; /* 第三强调色（深橙色） */
-  --accent-quaternary: #ff8a65; /* 第四强调色（珊瑚色） */
-  
-  /* 兼容性变量（保持与其他主题一致的变量名） */
-  --accent-blue: var(--accent-primary);
-  --accent-blue-hover: var(--accent-primary-hover);
-  --accent-green: var(--accent-secondary);
-  --accent-red: var(--accent-danger);
-  --accent-purple: var(--accent-tertiary);
-  --accent-yellow: var(--accent-quaternary);
-
-  /* 渐变色边框变量 - 橙色主题 */
-  --gradient-active-start: var(--accent-primary);
-  --gradient-active-end: var(--accent-danger);
+  /* 剪贴板项目类型背景色 - 更柔和的低饱和度 */
+  --type-text-bg: rgba(37, 99, 235, 0.08);
+  --type-url-bg: rgba(5, 150, 105, 0.08);
+  --type-code-bg: rgba(124, 58, 237, 0.08);
+  --type-image-bg: rgba(220, 38, 38, 0.08);
+  --type-favorite-bg: rgba(217, 119, 6, 0.10);
 }

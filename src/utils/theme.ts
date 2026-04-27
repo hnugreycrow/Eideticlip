@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 
 // 主题类型
-export type ThemeType = 'light' | 'dark' | 'pink' | 'orange';
+export type ThemeType = 'light' | 'dark';
 
 // 创建一个响应式的主题状态
 const currentTheme = ref<ThemeType>('dark');
@@ -41,7 +41,7 @@ const applyTheme = (theme: ThemeType): void => {
   document.documentElement.setAttribute('data-theme', theme);
   
   // 为body添加对应的主题类
-  document.documentElement.classList.remove('dark', 'light', 'pink', 'orange');
+  document.documentElement.classList.remove('dark', 'light');
   document.documentElement.classList.add(theme);
 };
 
@@ -50,4 +50,4 @@ export const themeService = {
   currentTheme,
   initTheme,
   setTheme
-};
+};;

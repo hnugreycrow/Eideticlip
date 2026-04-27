@@ -29,7 +29,7 @@ export class WindowService {
     publicPath: string,
     rendererPath: string,
     configService: ConfigService,
-    devServerUrl?: string
+    devServerUrl?: string,
   ) {
     this.preloadPath = preloadPath;
     this.publicPath = publicPath;
@@ -61,7 +61,7 @@ export class WindowService {
       minHeight: 600,
       maxWidthRatio: 0.9,
       maxHeightRatio: 0.9,
-      preferredRatio: 0.70, // 首选占屏比例
+      preferredRatio: 0.7, // 首选占屏比例
     };
 
     // 计算最大允许尺寸
@@ -87,12 +87,12 @@ export class WindowService {
     // 应用边界约束
     const finalWidth = Math.max(
       baseConfig.minWidth,
-      Math.min(idealWidth, maxWidth)
+      Math.min(idealWidth, maxWidth),
     );
 
     const finalHeight = Math.max(
       baseConfig.minHeight,
-      Math.min(idealHeight, maxHeight)
+      Math.min(idealHeight, maxHeight),
     );
 
     // 计算居中位置
@@ -134,7 +134,7 @@ export class WindowService {
     this.win.webContents.on("did-finish-load", () => {
       this.win?.webContents.send(
         "main-process-message",
-        new Date().toLocaleString()
+        new Date().toLocaleString(),
       );
     });
 

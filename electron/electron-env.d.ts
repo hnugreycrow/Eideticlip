@@ -60,8 +60,8 @@ interface Window {
     getAll: () => Promise<any>
     
     // 特定配置方法（保持兼容性）
-    getTheme: () => Promise<'light' | 'dark' | 'pink' | 'orange'>
-    setTheme: (theme: 'light' | 'dark' | 'pink' | 'orange') => Promise<boolean>
+    getTheme: () => Promise<'light' | 'dark'>
+    setTheme: (theme: 'light' | 'dark') => Promise<boolean>
   }
   updater: {
     checkForUpdates: () => Promise<any>

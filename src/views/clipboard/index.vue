@@ -785,7 +785,7 @@ const deleteBatchItems = () => {
 /* 内容项目 */
 .content-item {
   background: var(--bg-tertiary);
-  border: 2px solid var(--border-light);
+  border: 1px solid var(--border-light);
   border-radius: 10px;
   padding: 14px;
   margin: 10px 20px;
@@ -795,19 +795,20 @@ const deleteBatchItems = () => {
   display: flex;
   align-items: center;
   gap: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 
   &:hover {
     background: var(--bg-hover);
-    border: 2px solid inherit;
+    border: 1px solid var(--border-medium);
     background-origin: border-box;
     background-clip: padding-box, border-box;
-    transform: translateY(-1px);
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
   }
 
   &.active {
     background: var(--bg-active);
-    border: 2px solid transparent;
+    border: 1px solid transparent;
     background-image: linear-gradient(var(--bg-hover), var(--bg-hover)),
       linear-gradient(
         135deg,
@@ -816,33 +817,13 @@ const deleteBatchItems = () => {
       );
     background-origin: border-box;
     background-clip: padding-box, border-box;
-    box-shadow: 0 3px 10px rgba(0, 136, 255, 0.2);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
   }
 
   /* 选中状态样式 */
   &.selected {
     background: var(--bg-active);
-    box-shadow: 0 2px 8px rgba(0, 136, 255, 0.15);
-  }
-
-  /* 收藏项目特殊样式 */
-  &.favorite {
-    &.active {
-      border: 2px solid transparent;
-      background-image: linear-gradient(var(--bg-active), var(--bg-active)),
-        linear-gradient(
-          135deg,
-          var(--favorite-border) 0%,
-          var(--accent-red) 100%
-        );
-      background-origin: border-box;
-      background-clip: padding-box, border-box;
-    }
-
-    .icon-color {
-      color: var(--favorite-border);
-      fill: var(--favorite-border);
-    }
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
   }
 }
 
