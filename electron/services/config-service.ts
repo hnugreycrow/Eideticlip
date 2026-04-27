@@ -2,7 +2,7 @@ import Store from 'electron-store';
 
 // 定义配置类型
 interface ConfigSchema {
-  theme: 'light' | 'dark' | 'pink' | 'orange';
+  theme: 'light' | 'dark';
   shortcut: string;
   minimizeToTray: boolean;
   dataRetentionDays: number; // 数据保存天数
@@ -29,7 +29,7 @@ export class ConfigService {
       // 默认配置
       defaults: {
         theme: 'dark',
-        shortcut: 'CommandOrControl+Alt+C',
+        shortcut: 'Alt+Shift+C',
         minimizeToTray: false,
         dataRetentionDays: 1, // 默认保存1天
         version: '1.0.0'
