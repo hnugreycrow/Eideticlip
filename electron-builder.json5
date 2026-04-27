@@ -42,7 +42,10 @@
     "allowToChangeInstallationDirectory": true,
     "deleteAppDataOnUninstall": true,
     "createDesktopShortcut": false,
-    "include": "installer.nsh"
+    "include": "installer.nsh",
+    "installerHeaderIcon": "public/icon.ico",
+    "unicode": true,
+    "warningsAsErrors": false
   },
   "linux": {
     "target": [
