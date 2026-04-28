@@ -43,30 +43,63 @@ hljs.registerLanguage("python", python);
 
 // 根据主题动态切换 highlight.js 的样式文件
 const HLJS_LINK_ID = "hljs-theme-css";
-function applyHljsTheme(theme: string) {
-  const href = theme === "dark" ? githubDarkUrl : githubLightUrl;
-  const prev = document.getElementById(HLJS_LINK_ID);
-  if (prev) prev.remove();
+
+// ✅ 模块作用域变量：所有实例共享
+let instanceCount = 0;
+let currentLinkElement: HTMLLinkElement | null = null;
+
+function createLink(href: string) {
+  // 先移除旧的
+  if (currentLinkElement) {
+    currentLinkElement.remove();
+    currentLinkElement = null;
+  }
+  // 创建新的
   const link = document.createElement("link");
   link.id = HLJS_LINK_ID;
   link.rel = "stylesheet";
   link.href = href;
   document.head.appendChild(link);
+  currentLinkElement = link;
 }
 
+function removeLink() {
+  if (currentLinkElement) {
+    currentLinkElement.remove();
+    currentLinkElement = null;
+  }
+}
+
+function applyHljsTheme(theme: string) {
+  const href = theme === "dark" ? githubDarkUrl : githubLightUrl;
+  createLink(href);
+}
+
+// 挂载时：计数 +1
 onMounted(() => {
-  applyHljsTheme(themeService.currentTheme.value);
+  instanceCount++;
+  // 只有第一个实例才创建链接（或者重新应用主题）
+  if (instanceCount === 1) {
+    applyHljsTheme(themeService.currentTheme.value);
+  }
 });
 
-// 监听主题变化，动态更新样式
+// 主题切换时：只在有活跃实例时才更新链接
 watch(
   () => themeService.currentTheme.value,
-  (t) => applyHljsTheme(t)
+  (t) => {
+    if (instanceCount > 0) {
+      applyHljsTheme(t);
+    }
+  }
 );
 
+// 卸载时：计数 -1，只有归零才移除
 onUnmounted(() => {
-  const prev = document.getElementById(HLJS_LINK_ID);
-  if (prev) prev.remove();
+  instanceCount--;
+  if (instanceCount === 0) {
+    removeLink();
+  }
 });
 
 /**
