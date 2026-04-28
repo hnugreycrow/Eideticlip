@@ -62,9 +62,6 @@ export const useClipboardStore = defineStore('clipboard', {
 
     // 添加新剪贴板项
     async addClipboardItem(content: string) {
-      const exists = this.clipboardData.some(item => item.content === content);
-      if (exists) return;
-
       const type = getContentType(content);
       const shouldAddToCurrentView = this.activeFilter === 'all' || this.activeFilter === type;
       const size = formatSize(new Blob([content]).size);
