@@ -20,6 +20,11 @@
       </div>
 
       <div class="detail-text">
+        <div class="detail-text-header">
+          <el-button link type="primary" title="放大查看" @click="openZoomView">
+            <i-ep-Full-Screen class="btn-icon" />
+          </el-button>
+        </div>
         <HighlightedText :content="displayContent" :type="props.item?.type" />
         <div class="expend-button">
           <el-button
@@ -69,11 +74,56 @@
       <i-ep-Select class="empty-icon" />
       <p class="empty-text">选择一个剪贴板项目查看详情</p>
     </div>
+
+    <!-- 放大查看对话框 -->
+    <el-dialog
+      v-model="zoomVisible"
+      title="详情内容"
+      width="85%"
+      :close-on-click-modal="true"
+      :close-on-press-escape="true"
+      class="zoom-dialog"
+      destroy-on-close
+    >
+      <div class="zoom-content">
+        <div class="zoom-meta">
+          <div class="zoom-meta-item">
+            <span class="zoom-meta-label">类型</span>
+            <span class="zoom-meta-value">{{ typeLabel }}</span>
+          </div>
+          <div class="zoom-meta-item">
+            <span class="zoom-meta-label">创建时间</span>
+            <span class="zoom-meta-value">{{ formattedTime }}</span>
+          </div>
+          <div class="zoom-meta-item">
+            <span class="zoom-meta-label">字符数</span>
+            <span class="zoom-meta-value">{{
+              item?.content?.length || 0
+            }}</span>
+          </div>
+        </div>
+        <div class="zoom-text">
+          <HighlightedText
+            :content="item?.content || ''"
+            :type="props.item?.type"
+          />
+        </div>
+      </div>
+      <template #footer>
+        <div class="zoom-footer">
+          <el-button type="primary" @click="copyItem(item!)">
+            <i-ep-Document-Copy class="btn-icon" />
+            <span>复制内容</span>
+          </el-button>
+          <el-button @click="closeZoomView">关闭</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import HighlightedText from "./HighlightedText.vue";
 import { ClipboardItem } from "@/utils/type";
 import { formatTime, getTypeLabel } from "@/utils/utils";
@@ -129,6 +179,15 @@ const deleteItem = (item: Item) => {
 
 const toggleFavorite = (item: Item) => {
   emit("favorite", item);
+};
+
+// 放大查看
+const zoomVisible = ref(false);
+const openZoomView = () => {
+  zoomVisible.value = true;
+};
+const closeZoomView = () => {
+  zoomVisible.value = false;
 };
 </script>
 
@@ -302,10 +361,77 @@ const toggleFavorite = (item: Item) => {
   color: var(--text-secondary);
 }
 
+.detail-text-header {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-light);
+}
+
 .expend-button {
   display: flex;
   justify-content: center;
   align-items: center;
   margin-top: 10px;
+}
+
+/* 放大查看对话框样式 */
+:deep(.zoom-dialog .el-dialog__body) {
+  padding: 0;
+  max-height: 70vh;
+  overflow: hidden;
+}
+
+.zoom-content {
+  display: flex;
+  flex-direction: column;
+  max-height: 70vh;
+}
+
+.zoom-meta {
+  display: flex;
+  gap: 24px;
+  padding: 16px 20px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-light);
+  flex-shrink: 0;
+}
+
+.zoom-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.zoom-meta-label {
+  color: var(--text-secondary);
+}
+
+.zoom-meta-value {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.zoom-text {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  background: var(--bg-tertiary);
+  font-size: 14px;
+  line-height: 1.7;
+  word-break: break-all;
+  white-space: pre-wrap;
+  color: var(--text-primary);
+  min-height: 200px;
+  max-height: calc(70vh - 60px);
+}
+
+.zoom-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
 }
 </style>
