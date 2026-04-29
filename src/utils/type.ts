@@ -1,3 +1,4 @@
+/** 窗口控制 API */
 export interface WindowControls {
   minimize: () => void;
   maximize: () => void;
@@ -6,7 +7,7 @@ export interface WindowControls {
   onMaximizeChange: (callback: (isMaximized: boolean) => void) => () => void;
 }
 
-// 剪贴板项目类型定义
+/** 剪贴板单项数据 */
 export interface ClipboardItem {
   id: number;
   type: string;
@@ -16,53 +17,53 @@ export interface ClipboardItem {
   is_favorite?: boolean;
 }
 
-export interface clipboardAPI {
+/** 剪贴板历史分页结果 */
+export interface ClipboardHistoryResult {
+  items: ClipboardItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+/** 批量删除结果 */
+export interface DeleteBatchResult {
+  success: boolean;
+  deletedCount: number;
+  failedIds: number[];
+}
+
+/** 渲染进程暴露的剪贴板 API */
+export interface ClipboardAPI {
   read: () => Promise<string>;
-  write: (text: string) => Promise<string | null>;
-  // 剪贴板监听相关API
+  write: (text: string) => Promise<boolean>;
+  // 监听
   startWatching: () => Promise<void>;
   stopWatching: () => Promise<void>;
   onChanged: (callback: (content: string) => void) => () => void;
-  // 数据库操作API
-  saveItem: (item: ClipboardItem) => Promise<void>;
+  // 数据操作
+  saveItem: (item: ClipboardItem) => Promise<number | null>;
   deleteItem: (id: number) => Promise<boolean>;
-  deleteBatch(idsToDelete: number[]): Promise<{
-    success: boolean;
-    deletedCount: number;
-    failedIds: number[];
-  }>;
+  deleteBatch: (idsToDelete: number[]) => Promise<DeleteBatchResult>;
   clearAll: () => Promise<boolean>;
-  getHistory: (
-    page: number,
-    pageSize: number,
-    type: string
-  ) => Promise<{
-    items: ClipboardItem[];
-    total: number;
-    page: number;
-    pageSize: number;
-  }>;
-  // 收藏相关API
+  getHistory: (page: number, pageSize: number, type: string) => Promise<ClipboardHistoryResult>;
+  // 收藏
   setFavorite: (id: number, isFavorite: boolean) => Promise<boolean>;
   getFavorites: () => Promise<ClipboardItem[]>;
 }
 
-export interface IpcRendererAPI {
-  on: (channel: string, listener: (...args: any[]) => void) => void;
-  off: (channel: string, ...args: any[]) => void;
-  send: (channel: string, ...args: any[]) => void;
-  invoke: (channel: string, ...args: any[]) => Promise<any>;
-  once: (channel: string, listener: (...args: any[]) => void) => void;
+/** 渲染进程暴露的配置 API */
+export interface ConfigAPI {
+  get: <T>(key: string) => Promise<T>;
+  set: <T>(key: string, value: T) => Promise<boolean>;
+  getAll: () => Promise<any>;
 }
 
-// 更新服务类型定义
+/** 渲染进程暴露的自动更新 API */
 export interface UpdateControls {
   checkForUpdates: () => Promise<any>;
   downloadUpdate: () => Promise<boolean | { error: any }>;
   installUpdate: () => Promise<boolean>;
   setAutoUpdate: (enabled: boolean) => Promise<boolean>;
   getAutoUpdate: () => Promise<boolean>;
-  onUpdateStatus: (
-    callback: (status: { status: string; data?: any }) => void
-  ) => () => void;
+  onUpdateStatus: (callback: (status: { status: string; data?: any }) => void) => () => void;
 }

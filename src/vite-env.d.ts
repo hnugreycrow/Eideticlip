@@ -1,11 +1,14 @@
 /// <reference types="vite/client" />
-import { WindowControls, clipboardAPI, IpcRendererAPI } from "./utils/type";
+
+import type { WindowControls, ClipboardAPI, ConfigAPI, UpdateControls } from "./utils/type";
 
 declare global {
   interface Window {
+    ipcRenderer: import("electron").IpcRenderer;
     windowControls: WindowControls;
-    clipboard: clipboardAPI;
-    ipcRenderer: IpcRendererAPI;
+    clipboard: ClipboardAPI;
+    config: ConfigAPI;
+    updater: UpdateControls;
   }
 }
 
