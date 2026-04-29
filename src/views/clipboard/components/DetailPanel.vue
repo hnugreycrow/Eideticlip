@@ -218,7 +218,6 @@ const closeZoomView = () => {
 .detail-header {
   height: 60px;
   padding: 0 16px;
-  border-bottom: 1px solid var(--border-light);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -388,6 +387,7 @@ const closeZoomView = () => {
   display: flex;
   flex-direction: column;
   max-height: 70vh;
+  border: 1px solid var(--border-light);
 }
 
 .zoom-meta {

@@ -401,6 +401,7 @@ const deleteBatchItems = () => {
             v-model="searchQuery"
             class="search-input"
             placeholder="搜索剪切板内容..."
+            clearable
           />
         </div>
         <div class="search-filters">
@@ -619,9 +620,8 @@ const deleteBatchItems = () => {
 /* 内容头部 */
 .content-header {
   height: 60px;
-  padding: 0 24px;
+  padding: 10px 24px;
   background: var(--bg-secondary);
-  border-bottom: 1px solid var(--border-light);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -678,7 +678,7 @@ const deleteBatchItems = () => {
 
 /* 搜索区域 */
 .search-container {
-  padding: 16px 24px;
+  padding: 0px 24px 12px 24px;
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border-light);
 }

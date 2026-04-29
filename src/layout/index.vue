@@ -18,7 +18,7 @@ const cacheRoutes = computed<string[]>(() =>
 <template>
   <div class="common-layout">
     <el-container>
-      <el-header height="32px">
+      <el-header height="40px">
         <Header></Header>
       </el-header>
       <el-container class="main-container">
@@ -63,7 +63,7 @@ const cacheRoutes = computed<string[]>(() =>
 }
 
 .main-container {
-  height: calc(100% - 32px);
+  height: calc(100% - 40px);
   overflow: hidden;
   display: flex;
   flex: 1;

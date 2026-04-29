@@ -97,7 +97,7 @@ onUnmounted(() => {
   overflow: hidden;
   flex-shrink: 0;
   border-bottom: 1px solid var(--border-light);
-  height: 32px;
+  height: 40px;
 }
 
 .titlebar-left {

@@ -24,7 +24,7 @@
   --el-mask-color-extra-light: rgba(0, 0, 0, 0.3);
 
   /* 自定义语义化背景变量（层级由高到低） */
-  --bg-primary: #141414; /* 页面背景 / 最底层容器 */
+  --bg-primary: #181818; /* 页面背景 / 最底层容器 */
   --bg-secondary: #1a1a1a; /* 卡片、侧边栏、弹窗背景 */
   --bg-tertiary: #222222; /* 列表项、输入框背景 */
   --bg-hover: #2a2a2a; /* hover 高亮 */
@@ -37,7 +37,7 @@
   --text-inverse: #ffffff; /* 用于深色背景上的"反色"文字 */
 
   /* 边框颜色 */
-  --border-light: #2c2c2c;
+  --border-light: #303030;
   --border-medium: #3c3c3c;
 
   /* 强调色（主题无关，两个主题保持一致） */
@@ -109,9 +109,9 @@
   --el-mask-color-extra-light: rgba(15, 23, 42, 0.05);
 
   /* 自定义语义化背景变量 */
-  --bg-primary: #f8fafc;
-  --bg-secondary: #ffffff;
-  --bg-tertiary: #f1f5f9;
+  --bg-primary: #f5f5f5;
+  --bg-secondary: #fafafa;
+  --bg-tertiary: #f9f9f9;
   --bg-hover: #eff6ff;
   --bg-active: #dbeafe;
 
