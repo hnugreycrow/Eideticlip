@@ -50,6 +50,8 @@ export class ClipboardService {
     // 写入剪贴板内容
     ipcMain.handle("clipboard-write", (_, text) => {
       clipboard.writeText(text);
+      // 更新最后记录的剪贴板内容，防止应用自身写入触发重复记录
+      this.lastClipboardContent = text;
       return true;
     });
 
