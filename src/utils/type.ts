@@ -32,6 +32,15 @@ export interface DeleteBatchResult {
   failedIds: number[];
 }
 
+/** 按类型统计的剪贴板计数 */
+export interface TypeCounts {
+  all: number;
+  text: number;
+  url: number;
+  code: number;
+  favorite: number;
+}
+
 /** 渲染进程暴露的剪贴板 API */
 export interface ClipboardAPI {
   read: () => Promise<string>;
@@ -49,6 +58,8 @@ export interface ClipboardAPI {
   // 收藏
   setFavorite: (id: number, isFavorite: boolean) => Promise<boolean>;
   getFavorites: () => Promise<ClipboardItem[]>;
+  // 计数
+  getCounts: () => Promise<TypeCounts>;
 }
 
 /** 渲染进程暴露的配置 API */

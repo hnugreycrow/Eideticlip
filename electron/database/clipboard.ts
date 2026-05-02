@@ -376,3 +376,30 @@ export function getFavoriteClipboardItems() {
     return [];
   }
 }
+
+/**
+ * 按类型统计剪贴板项目数量
+ * @returns 各类型计数对象
+ */
+export function getClipboardCounts() {
+  const counts = { all: 0, text: 0, url: 0, code: 0, favorite: 0 };
+  try {
+    const typeRows = db
+      .prepare(`SELECT type, COUNT(*) as c FROM clipboard_items GROUP BY type`)
+      .all() as Array<{ type: string; c: number }>;
+    for (const row of typeRows) {
+      counts.all += row.c;
+      if (row.type === "text" || row.type === "url" || row.type === "code") {
+        counts[row.type] = row.c;
+      }
+    }
+    const favRow = db
+      .prepare(`SELECT COUNT(*) as c FROM clipboard_items WHERE is_favorite = 1`)
+      .get() as { c: number } | undefined;
+    counts.favorite = favRow?.c ?? 0;
+    return counts;
+  } catch (error) {
+    console.error("Failed to get clipboard counts:", error);
+    return counts;
+  }
+}

@@ -1,6 +1,6 @@
 // stores/clipboardStore.ts
 import { defineStore } from 'pinia';
-import { ClipboardItem } from '@/utils/type';
+import { ClipboardItem, TypeCounts } from '@/utils/type';
 import { formatSize, getContentType } from '@/utils/utils';
 import { ElMessage, ElMessageBox } from 'element-plus'; // 确保导入UI组件
 
@@ -15,9 +15,19 @@ export const useClipboardStore = defineStore('clipboard', {
     currentPage: 1,
     totalItems: 0,
     isLoadingMore: false,
+    typeCounts: { all: 0, text: 0, url: 0, code: 0, favorite: 0 } as TypeCounts,
   }),
 
   actions: {
+    // 刷新各类型计数（IPC 失败时保留旧值）
+    async refreshCounts() {
+      try {
+        this.typeCounts = await window.clipboard.getCounts();
+      } catch (error) {
+        console.error('刷新计数失败:', error);
+      }
+    },
+
     // 加载剪贴板历史（原 useClipboard 中的核心方法）
     async loadClipboardHistory(this: ClipboardStore, page = 1, append = false, type = this.activeFilter) {
       this.isLoadingMore = true;
@@ -82,6 +92,7 @@ export const useClipboardStore = defineStore('clipboard', {
             this.clipboardData.unshift(newItem); // 新增项放前面
             this.totalItems += 1;
           }
+          this.refreshCounts();
         } else {
           await this.loadClipboardHistory(); // 保存失败时刷新
         }
@@ -106,6 +117,9 @@ export const useClipboardStore = defineStore('clipboard', {
 
       // 数据库删除
       window.clipboard.deleteItem(id)
+        .then(() => {
+          this.refreshCounts();
+        })
         .catch((error) => {
           console.error('删除出错:', error);
           ElMessage({ message: '删除失败，请重试', type: 'error' });
@@ -126,6 +140,7 @@ export const useClipboardStore = defineStore('clipboard', {
         if (success) {
           this.clipboardData = [];
           this.totalItems = 0;
+          this.typeCounts = { all: 0, text: 0, url: 0, code: 0, favorite: 0 };
           ElMessage({ message: '已清空所有记录', type: 'success' });
         } else {
           ElMessage({ message: '清空失败', type: 'error' });
