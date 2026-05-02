@@ -28,19 +28,6 @@ onMounted(async () => {
 <style>
 @import "./styles/themes.css";
 
-/* 响应式布局 */
-@media (max-width: 768px) {
-  :root {
-    --detail-width: 280px;
-  }
-}
-
-@media (max-width: 576px) {
-  :root {
-    --detail-width: 100%;
-  }
-}
-
 html,
 body,
 #app {

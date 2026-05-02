@@ -24,29 +24,29 @@
   --el-mask-color-extra-light: rgba(0, 0, 0, 0.3);
 
   /* 自定义语义化背景变量（层级由高到低） */
-  --bg-primary: #181818; /* 页面背景 / 最底层容器 */
-  --bg-secondary: #1a1a1a; /* 卡片、侧边栏、弹窗背景 */
-  --bg-tertiary: #222222; /* 列表项、输入框背景 */
-  --bg-hover: #2a2a2a; /* hover 高亮 */
-  --bg-active: #303030; /* 激活/按下高亮 */
+  --bg-primary:   #111111;  /* 页面底色 */
+  --bg-secondary: #171717;  /* 侧边栏、导航 */
+  --bg-tertiary:  #1f1f1f;  /* 代码块、输入框 */
+  --bg-hover:     #232323;
+  --bg-active:    #2e2e2e;
 
   /* 文本颜色（按重要程度） */
-  --text-primary: rgba(255, 255, 255, 0.95); /* 主文本 */
-  --text-secondary: #b8b8b8; /* 副文本 */
-  --text-tertiary: #808080; /* 提示文本 */
-  --text-inverse: #ffffff; /* 用于深色背景上的"反色"文字 */
+  --text-primary:   rgba(255,255,255,.92);
+  --text-secondary: #a0a0a0;
+  --text-tertiary:  #606060;
+  --text-inverse:   #ffffff;
 
   /* 边框颜色 */
-  --border-light: #303030;
-  --border-medium: #3c3c3c;
+  --border-light:  #2a2a2a;
+  --border-medium: #383838;
 
   /* 强调色（主题无关，两个主题保持一致） */
-  --accent-primary: #0088ff; /* 主强调色（蓝色） */
-  --accent-primary-hover: #0078e7; /* 按钮悬停状态 */
-  --accent-secondary: #42b883; /* 次强调色（绿色） */
-  --accent-danger: #ff4757; /* 危险色（红色） */
-  --accent-tertiary: #8b5cf6; /* 第三强调色（紫色） */
-  --accent-quaternary: #f0c000; /* 第四强调色（黄色） */
+  --accent-primary:       #3b82f6;
+  --accent-primary-hover: #2563eb;
+  --accent-secondary:     #22c55e;
+  --accent-danger:        #ef4444;
+  --accent-tertiary:      #8b5cf6;
+  --accent-quaternary:    #f59e0b;
   
   /* 兼容性变量（保持与其他主题一致的变量名） */
   --accent-blue: var(--accent-primary);
@@ -61,26 +61,20 @@
   --gradient-active-end: var(--accent-primary);
 
   /* 收藏项目颜色 */
-  --favorite-bg: rgba(255, 217, 102, 0.06);
-  --favorite-border: var(--accent-quaternary);
-  --favorite-corner: var(--accent-quaternary);
+  --favorite-bg:   rgba(245,158,11,.07);
+  --favorite-border: #f59e0b;
 
   /* 剪贴板项目类型背景色 */
-  --type-text-bg: rgba(var(--el-color-primary-rgb), 0.1);
-  --type-url-bg: rgba(66, 184, 131, 0.1);
-  --type-code-bg: rgba(139, 92, 246, 0.1);
-  --type-image-bg: rgba(255, 71, 87, 0.1);
-  --type-favorite-bg: rgba(240, 192, 0, 0.1);
+  --type-text-bg:     rgba(59,130,246,.12);
+  --type-url-bg:      rgba(34,197,94,.12);
+  --type-code-bg:     rgba(139,92,246,.12);
+  --type-image-bg:    rgba(239,68,68,.12);
 
   /* 布局尺寸 */
   --nav-width: 60px;
   --header-height: 50px;
-  --detail-width: 320px;
-
-  /* 1. 只保留 3 个变量，后期换主题只改这里 */
-  --fav-dot-size: 6px; /* 指示点直径 */
-  --fav-dot-color: #f59e0b; /* 琥珀色，深浅主题都醒目 */
-  --fav-bg-hover: #fffbeb; /* 悬停时整行微亮 */
+  --list-width: 320px;
+  --filter-sidebar-width: 150px;
 }
 
 /* ===== 浅色主题 ===== */
@@ -109,29 +103,29 @@
   --el-mask-color-extra-light: rgba(15, 23, 42, 0.05);
 
   /* 自定义语义化背景变量 */
-  --bg-primary: #f5f5f5;
+  --bg-primary:   #f4f4f4;
   --bg-secondary: #fafafa;
-  --bg-tertiary: #f9f9f9;
-  --bg-hover: #eff6ff;
-  --bg-active: #dbeafe;
+  --bg-tertiary:  #ffffff;
+  --bg-hover:     #eef2ff;
+  --bg-active:    #e0e7ff;
 
   /* 文本颜色 */
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-tertiary: #94a3b8;
-  --text-inverse: #ffffff;
+  --text-primary:   #111111;
+  --text-secondary: #555555;
+  --text-tertiary:  #999999;
+  --text-inverse:   #ffffff;
 
   /* 边框颜色 */
-  --border-light: #e2e8f0;
-  --border-medium: #cbd5e1;
+  --border-light:  #e5e5e5;
+  --border-medium: #d4d4d4;
 
   /* 强调色 - 现代饱和色系 */
-  --accent-primary: #2563eb;
+  --accent-primary:       #2563eb;
   --accent-primary-hover: #1d4ed8;
-  --accent-secondary: #059669;
-  --accent-danger: #dc2626;
-  --accent-tertiary: #7c3aed;
-  --accent-quaternary: #d97706;
+  --accent-secondary:     #16a34a;
+  --accent-danger:        #dc2626;
+  --accent-tertiary:      #7c3aed;
+  --accent-quaternary:    #d97706;
 
   /* 兼容性变量 */
   --accent-blue: var(--accent-primary);
@@ -146,14 +140,16 @@
   --gradient-active-end: #60a5fa;
 
   /* 收藏项目颜色 */
-  --favorite-bg: rgba(251, 191, 36, 0.08);
-  --favorite-border: #f59e0b;
-  --favorite-corner: #f59e0b;
+  --favorite-bg:   rgba(217,119,6,.07);
+  --favorite-border: #d97706;
 
   /* 剪贴板项目类型背景色 - 更柔和的低饱和度 */
-  --type-text-bg: rgba(37, 99, 235, 0.08);
-  --type-url-bg: rgba(5, 150, 105, 0.08);
-  --type-code-bg: rgba(124, 58, 237, 0.08);
-  --type-image-bg: rgba(220, 38, 38, 0.08);
+  --type-text-bg:  rgba(37,99,235,.08);
+  --type-url-bg:   rgba(22,163,74,.08);
+  --type-code-bg:  rgba(124,58,237,.08);
+  --type-image-bg: rgba(220,38,38,.08);
   --type-favorite-bg: rgba(217, 119, 6, 0.10);
+
+  /* 布局尺寸 */
+  --filter-sidebar-width: 180px;
 }
