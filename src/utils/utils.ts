@@ -189,3 +189,40 @@ export const truncateText = (text: string, maxLength: number) => {
   if (!text || typeof text !== "string") return "";
   return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
 };
+
+const isSameDay = (a: Date, b: Date) =>
+  a.getFullYear() === b.getFullYear() &&
+  a.getMonth() === b.getMonth() &&
+  a.getDate() === b.getDate();
+
+/**
+ * 时分格式化（HH:mm）
+ */
+export const formatTimeOfDay = (timestamp: Date) => {
+  const d = new Date(timestamp);
+  const h = d.getHours().toString().padStart(2, "0");
+  const m = d.getMinutes().toString().padStart(2, "0");
+  return `${h}:${m}`;
+};
+
+/**
+ * 列表项相对时间：
+ * - 今天 → HH:mm
+ * - 昨天 → "昨天"
+ * - 今年内 → M月D日
+ * - 更早 → YYYY/M/D
+ */
+export const formatRelativeTime = (timestamp: Date) => {
+  const d = new Date(timestamp);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  if (isSameDay(d, today)) return formatTimeOfDay(d);
+  if (isSameDay(d, yesterday)) return "昨天";
+  if (d.getFullYear() === now.getFullYear()) {
+    return `${d.getMonth() + 1}月${d.getDate()}日`;
+  }
+  return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+};

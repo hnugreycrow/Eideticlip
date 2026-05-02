@@ -1,78 +1,92 @@
 <template>
-  <div class="detail-panel" :class="{ 'is-open': props.isOpen }">
+  <div class="detail-panel">
     <div class="detail-header">
-      <h3 class="detail-title">{{ item ? "详情" : "无选中项" }}</h3>
-      <el-button class="detail-close" @click="closeDetail" text>
-        <i-ep-Close />
-      </el-button>
+      <div class="detail-title">{{ item ? "详情" : "" }}</div>
+      <div class="detail-header-actions">
+        <template v-if="item">
+          <el-tooltip content="放大查看" placement="bottom">
+            <el-button class="header-action-btn" text @click="openZoomView">
+              <i-ep-Full-Screen />
+            </el-button>
+          </el-tooltip>
+          <el-tooltip
+            :content="item.is_favorite ? '取消收藏' : '收藏'"
+            placement="bottom"
+          >
+            <el-button
+              class="header-action-btn"
+              :class="{ 'is-favorite': item.is_favorite }"
+              text
+              @click="toggleFavorite(item)"
+            >
+              <i-ep-Star />
+            </el-button>
+          </el-tooltip>
+          <el-tooltip content="删除" placement="bottom">
+            <el-button class="header-action-btn" text @click="deleteItem(item)">
+              <i-ep-Delete />
+            </el-button>
+          </el-tooltip>
+        </template>
+      </div>
     </div>
 
     <div v-if="item" class="detail-content">
-      <div class="detail-type">
-        <div class="detail-type-icon" :class="`type-${item.type}`">
-          <i-ep-Document v-if="item.type === 'text'" />
-          <i-ep-Link v-else-if="item.type === 'url'" />
-          <i-ep-Tickets v-else-if="item.type === 'code'" />
-          <i-ep-Picture v-else-if="item.type === 'image'" />
-          <i-ep-Document v-else />
-        </div>
-        <span class="detail-type-label">{{ typeLabel }}</span>
-      </div>
-
       <div class="detail-text">
-        <div class="detail-text-header">
-          <el-button link type="primary" title="放大查看" @click="openZoomView">
-            <i-ep-Full-Screen class="btn-icon" />
+        <el-tooltip content="复制内容" placement="left">
+          <el-button class="copy-overlay-btn" @click="copyItem(item)">
+            <i-ep-Document-Copy />
           </el-button>
-        </div>
-        <HighlightedText :content="displayContent" :type="props.item?.type" />
-        <div class="expend-button">
-          <el-button
-            v-if="item.content.length > MAX_CONTENT_LENGTH"
-            link
-            type="primary"
-            @click="showAllContent = !showAllContent"
-          >
-            {{ showAllContent ? "收起" : "展开" }}
-          </el-button>
+        </el-tooltip>
+        <div class="detail-text-body">
+          <HighlightedText :content="displayContent" :type="props.item?.type" />
+          <div class="expend-button">
+            <el-button
+              v-if="item.content.length > MAX_CONTENT_LENGTH"
+              link
+              type="primary"
+              @click="showAllContent = !showAllContent"
+            >
+              {{ showAllContent ? "收起" : "展开" }}
+            </el-button>
+          </div>
         </div>
       </div>
 
       <div class="detail-meta">
         <div class="detail-meta-item">
+          <span class="meta-label">类型</span>
+          <div class="detail-type">
+            <span class="detail-type-label" :class="`type-${item.type}`">{{ typeLabel }}</span>
+          </div>
+        </div>
+        <div class="detail-meta-item">
           <span class="meta-label">创建时间</span>
           <span class="meta-value">{{ formattedTime }}</span>
         </div>
-      </div>
-
-      <div class="detail-actions">
-        <el-button
-          class="detail-action-btn"
-          style="color: var(--text-inverse)"
-          type="primary"
-          @click="copyItem(item)"
+        <div class="detail-meta-item">
+          <span class="meta-label">大小</span>
+          <span class="meta-value">{{ item.size }}</span>
+        </div>
+        <div class="detail-meta-item">
+          <span class="meta-label">ID</span>
+          <span class="meta-value">{{ item.id }}</span>
+        </div>
+        <div
+          v-if="item.is_favorite"
+          class="detail-meta-item detail-meta-item--full"
         >
-          <i-ep-Document-Copy class="btn-icon" />
-          <span>复制内容</span>
-        </el-button>
-        <el-button
-          class="detail-action-btn"
-          :type="item.is_favorite ? 'warning' : 'default'"
-          @click="toggleFavorite(item)"
-        >
-          <i-ep-Star class="btn-icon" :filled="item.is_favorite" />
-          <span>{{ item.is_favorite ? "取消收藏" : "收藏" }}</span>
-        </el-button>
-        <el-button class="detail-action-btn" @click="deleteItem(item)">
-          <i-ep-Delete class="btn-icon" />
-          <span>删除</span>
-        </el-button>
+          <span class="meta-label">收藏</span>
+          <span class="meta-value meta-value-favorite">
+            <i-ep-Star />
+            已收藏
+          </span>
+        </div>
       </div>
     </div>
 
     <div v-else class="detail-empty">
-      <i-ep-Select class="empty-icon" />
-      <p class="empty-text">选择一个剪贴板项目查看详情</p>
+      <el-empty description="选择一个剪贴板项目查看详情" />
     </div>
 
     <!-- 放大查看对话框 -->
@@ -132,7 +146,6 @@ interface Item extends ClipboardItem {}
 
 const props = defineProps<{
   item: Item | null;
-  isOpen: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -193,26 +206,15 @@ const closeZoomView = () => {
 
 <style lang="scss" scoped>
 .detail-panel {
-  width: 0;
+  flex: 1;
+  min-width: 0;
   height: 100%;
   background: var(--bg-secondary);
   border-left: 1px solid var(--border-light);
   display: flex;
   flex-direction: column;
-  transition: all 0.3s ease;
-  flex-shrink: 0;
   overflow: hidden;
   position: relative;
-}
-
-.detail-panel.is-open {
-  width: var(--detail-width, 320px);
-  border-left: 1px solid var(--border-light);
-}
-
-.detail-panel:not(.is-open) {
-  width: 0;
-  border-left: none;
 }
 
 .detail-header {
@@ -225,13 +227,35 @@ const closeZoomView = () => {
 
 .detail-title {
   font-size: 16px;
-  font-weight: 600;
   margin: 0;
-  color: var(--text-primary);
+  color: var(--text-secondary);
 }
 
 .detail-close {
   font-size: 16px;
+}
+
+.detail-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.header-action-btn {
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+  font-size: 16px;
+  color: var(--text-secondary);
+
+  &:hover {
+    color: var(--text-primary);
+  }
+
+  &.is-favorite {
+    color: var(--accent-yellow);
+  }
 }
 
 .detail-content {
@@ -260,19 +284,19 @@ const closeZoomView = () => {
   background: var(--bg-active);
 }
 
-.detail-type-icon.type-text {
+.detail-type-label.type-text {
   color: var(--accent-blue);
 }
 
-.detail-type-icon.type-url {
+.detail-type-label.type-url {
   color: var(--accent-green);
 }
 
-.detail-type-icon.type-code {
+.detail-type-label.type-code {
   color: var(--accent-purple);
 }
 
-.detail-type-icon.type-image {
+.detail-type-label.type-image {
   color: var(--accent-red);
 }
 
@@ -283,6 +307,7 @@ const closeZoomView = () => {
 }
 
 .detail-text {
+  position: relative;
   background: var(--bg-tertiary);
   border-radius: 8px;
   padding: 16px;
@@ -292,50 +317,73 @@ const closeZoomView = () => {
   white-space: pre-wrap;
   color: var(--text-primary);
   border: 1px solid var(--border-light);
-  max-height: 80vh;
+}
+
+.detail-text-body {
+  padding-top: 15px;
+  max-height: 50vh;
   overflow: auto;
 }
 
+.copy-overlay-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease;
+}
+
+.detail-text:hover .copy-overlay-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 .detail-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
 }
 
 .detail-meta-item {
   display: flex;
-  justify-content: space-between;
-  font-size: 13px;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  min-width: 0;
+}
+
+.detail-meta-item--full {
+  grid-column: 1 / -1;
 }
 
 .meta-label {
-  color: var(--text-secondary);
+  font-size: 12px;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 .meta-value {
+  font-size: 14px;
+  font-weight: 500;
   color: var(--text-primary);
+  word-break: break-all;
 }
 
-.detail-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: auto;
-  padding-top: 20px;
-}
-
-.detail-action-btn {
-  display: flex;
+.meta-value-favorite {
+  color: var(--accent-yellow);
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  margin-left: 0px;
-  color: var(--text-primary);
-}
-
-.btn-icon {
-  font-size: 16px;
-  margin-right: 5px;
+  gap: 4px;
 }
 
 .detail-empty {
@@ -345,19 +393,7 @@ const closeZoomView = () => {
   align-items: center;
   justify-content: center;
   color: var(--text-secondary);
-  padding: 40px 16px;
   text-align: center;
-}
-
-.empty-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
-  opacity: 0.3;
-}
-
-.empty-text {
-  font-size: 14px;
-  color: var(--text-secondary);
 }
 
 .detail-text-header {

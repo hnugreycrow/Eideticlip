@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, onActivated } from "vue";
 import DetailPanel from "./components/DetailPanel.vue";
+import FilterSidebar from "./components/FilterSidebar.vue";
 import { ClipboardItem } from "@/utils/type";
-import { formatTime, getTypeLabel, truncateText } from "@/utils/utils";
+import { truncateText, formatRelativeTime } from "@/utils/utils";
 import { useSearch } from "./composables/useSearch";
 import { useVirtualScroll } from "./composables/useVirtualScroll";
 import { useSelection } from "./composables/useSelection";
@@ -24,13 +25,6 @@ const { searchQuery, filteredData } = useSearch(() => clipboardData.value);
 // 选择功能
 const {
   selectedIds,
-  isSelectionMode,
-  isAllSelected,
-  isIndeterminate,
-  selectedCount,
-  toggleSelectionMode,
-  toggleItemSelection,
-  toggleSelectAll,
 } = useSelection(() => filteredData.value);
 
 // 虚拟滚动
@@ -38,7 +32,6 @@ const { contentListRef, virtualScroll, visibleItems, handleScroll } =
   useVirtualScroll(() => filteredData.value);
 
 const selectedItem = ref<ClipboardItem | null>(null);
-const clipboardWatcherActive = ref(true); // 默认开启剪贴板监听
 let clipboardWatcherCleanup: (() => void) | null = null; // 剪贴板监听清理函数
 
 // 监听类型过滤器变化，重新加载数据
@@ -56,19 +49,20 @@ watch(
     if (newItems.value.length === 0 && oldItems.value.length > 0) {
       selectedItem.value = null;
     }
-    
+
     // 如果当前选中的项目不在新列表中，也需要重置
     if (selectedItem.value) {
-      const stillExists = newItems.value.some(item => item.id === selectedItem.value?.id);
+      const stillExists = newItems.value.some(
+        (item) => item.id === selectedItem.value?.id,
+      );
       if (!stillExists) {
         selectedItem.value = null;
       }
     }
   },
-  { deep: true }
+  { deep: true },
 );
 
-const isOpen = ref(false);
 const showAllContent = ref(false);
 
 /**
@@ -79,17 +73,15 @@ const showAllContent = ref(false);
 const selectItem = (item: ClipboardItem) => {
   showAllContent.value = false;
   selectedItem.value = item;
-  isOpen.value = true;
 };
 
 /**
- * 关闭详情面板
+ * 清空选中（详情面板常驻，回到空态）
  * @returns {void}
  */
 const closeDetail = () => {
   showAllContent.value = false;
   selectedItem.value = null;
-  isOpen.value = false;
 };
 
 /**
@@ -108,6 +100,7 @@ const toggleFavorite = (item: ClipboardItem, event?: Event) => {
       if (success) {
         // 更新本地状态
         item.is_favorite = newStatus;
+        clipboardStore.refreshCounts();
         ElMessage({
           message: newStatus ? "已添加到收藏" : "已取消收藏",
           type: newStatus ? "success" : "info",
@@ -206,6 +199,8 @@ const stopClipboardWatcher = () => {
 onMounted(() => {
   // 加载历史记录（只加载第一页）
   clipboardStore.loadClipboardHistory(1, false, activeFilter.value);
+  // 拉取分类计数
+  clipboardStore.refreshCounts();
   // 启动剪贴板监听
   startClipboardWatcher();
 
@@ -227,20 +222,8 @@ onActivated(() => {
   // 调用时机为首次挂载
   // 以及每次从缓存中被重新插入时
   handleScroll();
+  clipboardStore.refreshCounts();
 });
-
-// 导出数据
-const exportData = () => {
-  const data = JSON.stringify(clipboardData.value, null, 2);
-  const blob = new Blob([data], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `clipboard-${new Date().toISOString().split("T")[0]}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-  // 这里可以添加导出成功的提示
-};
 
 /**
  * 批量删除选中的项目
@@ -261,7 +244,7 @@ const deleteBatchItems = () => {
       confirmButtonText: "确认删除",
       cancelButtonText: "取消",
       type: "warning",
-    }
+    },
   ).then(() => {
     const idsToDelete = Array.from(selectedIds.value);
 
@@ -303,6 +286,7 @@ const deleteBatchItems = () => {
             type: "warning",
           });
         }
+        clipboardStore.refreshCounts();
       })
       .catch((error) => {
         console.error("批量删除出错:", error);
@@ -319,301 +303,149 @@ const deleteBatchItems = () => {
 
 <template>
   <div class="main-content">
-    <div class="content-container">
-      <!-- 内容头部 -->
-      <div class="content-header">
-        <div class="header-left">
-          <h1 class="header-title">剪贴板历史</h1>
-          <span class="header-stats"
-            >共 {{ totalItems }} 条记录 (已加载
-            {{ clipboardData.length }} 条)</span
-          >
-        </div>
-        <div class="header-actions">
-          <el-tooltip content="停止/启动自动监听剪贴板" placement="top">
-            <el-switch
-              v-model="clipboardWatcherActive"
-              @change="
-                clipboardWatcherActive
-                  ? startClipboardWatcher()
-                  : stopClipboardWatcher()
-              "
-              active-text="监听中"
-              inactive-text="已停止"
-              inline-prompt
+    <!-- 三栏主体 -->
+    <div class="three-column-body">
+      <FilterSidebar />
+      <div class="content-container">
+        <!-- 搜索区域 -->
+        <div class="search-container">
+          <div class="search-box">
+            <i-ep-search class="search-icon" />
+            <el-input
+              v-model="searchQuery"
+              class="search-input"
+              placeholder="搜索剪切板内容..."
+              clearable
             />
-          </el-tooltip>
+          </div>
+          <el-dropdown trigger="click" placement="bottom-end">
+            <el-button class="search-action-btn">
+              <i-ep-Plus />
+            </el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item @click="clipboardStore.clearAll">
+                  <i-ep-Delete class="el-icon--left" />清空
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </div>
 
-          <!-- 批量操作区域 -->
-          <template v-if="isSelectionMode">
-            <div class="batch-actions">
-              <el-checkbox
-                :model-value="isAllSelected"
-                :indeterminate="isIndeterminate"
-                @change="toggleSelectAll"
-              >
-                全选 ({{ selectedCount }})
-              </el-checkbox>
-              <el-button
-                class="action-btn"
-                :disabled="selectedCount === 0"
-                @click="deleteBatchItems"
-              >
-                <i-ep-delete class="el-icon--left" /> 删除选中 ({{
-                  selectedCount
-                }})
-              </el-button>
-              <el-button class="action-btn" @click="toggleSelectionMode">
-                取消
-              </el-button>
+        <!-- 内容列表 -->
+        <div class="content-list" ref="contentListRef" @scroll="handleScroll">
+          <template v-if="clipboardData.length === 0">
+            <div class="empty-state">
+              <i-ep-Document-Copy class="empty-icon" />
+              <div class="empty-title">暂无记录</div>
+              <div class="empty-desc">开始复制内容，它们会出现在这里</div>
             </div>
           </template>
           <template v-else>
-            <el-button class="action-btn" @click="toggleSelectionMode">
-              <i-ep-select class="el-icon--left" /> 批量选择
-            </el-button>
-            <el-dropdown trigger="click">
-              <el-button>
-                更多<el-icon class="el-icon--right"
-                  ><i-ep-arrow-down
-                /></el-icon>
-              </el-button>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item @click="clipboardStore.clearAll">
-                    <i-ep-delete class="el-icon--left" />清空
-                  </el-dropdown-item>
-                  <el-dropdown-item @click="exportData">
-                    <i-ep-upload class="el-icon--left" />导出
-                  </el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
+            <!-- 虚拟滚动占位元素，撑开滚动区域 -->
+            <div
+              class="virtual-scroll-placeholder"
+              :style="{ height: `${virtualScroll.totalHeight}px` }"
+            ></div>
+
+            <!-- 可见项目容器，使用绝对定位 -->
+            <div
+              class="virtual-scroll-content"
+              :style="{
+                transform: `translateY(${
+                  virtualScroll.startIndex * virtualScroll.itemHeight
+                }px)`,
+              }"
+            >
+              <div
+                v-for="item in visibleItems"
+                :key="item.id"
+                class="content-item"
+                :class="{
+                  active: selectedItem?.id === item.id,
+                  favorite: item.is_favorite,
+                  selected: selectedIds.has(item.id),
+                }"
+                @click="selectItem(item)"
+              >
+                <div class="item-icon">
+                  <el-icon>
+                    <i-ep-Document
+                      style="color: var(--accent-blue)"
+                      v-if="item.type === 'text'"
+                    />
+                    <i-ep-Link
+                      style="color: var(--accent-green)"
+                      v-else-if="item.type === 'url'"
+                    />
+                    <i-ep-Tickets
+                      style="color: var(--accent-purple)"
+                      v-else-if="item.type === 'code'"
+                    />
+                    <i-ep-Picture
+                      style="color: var(--accent-red)"
+                      v-else-if="item.type === 'image'"
+                    />
+                    <i-ep-Document style="color: var(--accent-blue)" v-else />
+                  </el-icon>
+                </div>
+                <div class="item-content">
+                  <div class="item-title">
+                    {{ truncateText(item.content, 50) }}
+                  </div>
+                </div>
+                <div class="item-time">{{ formatRelativeTime(item.timestamp) }}</div>
+              </div>
+
+              <!-- 全部加载完毕提示 -->
+              <div
+                v-if="
+                  !isLoadingMore &&
+                  clipboardData.length >= totalItems &&
+                  clipboardData.length > 0
+                "
+                class="load-complete"
+              >
+                <span>已加载全部内容</span>
+              </div>
+            </div>
           </template>
         </div>
-      </div>
 
-      <!-- 搜索区域 -->
-      <div class="search-container">
-        <div class="search-box">
-          <i-ep-search class="search-icon" />
-          <el-input
-            v-model="searchQuery"
-            class="search-input"
-            placeholder="搜索剪切板内容..."
-            clearable
-          />
-        </div>
-        <div class="search-filters">
-          <span
-            class="filter-tag"
-            :class="{ active: activeFilter === 'all' }"
-            @click="activeFilter = 'all'"
-            ><i-ep-Menu></i-ep-Menu> 全部</span
-          >
-          <span
-            class="filter-tag"
-            :class="{ active: activeFilter === 'text' }"
-            @click="activeFilter = 'text'"
-            ><i-ep-Document></i-ep-Document> 文本</span
-          >
-          <span
-            class="filter-tag"
-            :class="{ active: activeFilter === 'url' }"
-            @click="activeFilter = 'url'"
-            ><i-ep-Link></i-ep-Link> 链接</span
-          >
-          <span
-            class="filter-tag"
-            :class="{ active: activeFilter === 'code' }"
-            @click="activeFilter = 'code'"
-            ><i-ep-Tickets></i-ep-Tickets> 代码</span
-          >
-          <span
-            class="filter-tag"
-            :class="{ active: activeFilter === 'favorite' }"
-            @click="activeFilter = 'favorite'"
-            ><i-ep-star></i-ep-star> 收藏</span
-          >
-          <!-- <span
-            class="filter-tag"
-            :class="{ active: activeFilter === 'image' }"
-            @click="activeFilter = 'image'"
-            >图片</span
-          > -->
+        <!-- 加载更多指示器 -->
+        <div v-if="isLoadingMore && currentPage > 1" class="loading-more">
+          <el-icon class="is-loading"><i-ep-Loading /></el-icon>
+          <span>加载更多...</span>
         </div>
       </div>
 
-      <!-- 内容列表 -->
-      <div class="content-list" ref="contentListRef" @scroll="handleScroll">
-        <template v-if="clipboardData.length === 0">
-          <div class="empty-state">
-            <i-ep-Document-Copy class="empty-icon" />
-            <div class="empty-title">暂无记录</div>
-            <div class="empty-desc">开始复制内容，它们会出现在这里</div>
-          </div>
-        </template>
-        <template v-else>
-          <!-- 虚拟滚动占位元素，撑开滚动区域 -->
-          <div
-            class="virtual-scroll-placeholder"
-            :style="{ height: `${virtualScroll.totalHeight}px` }"
-          ></div>
-
-          <!-- 可见项目容器，使用绝对定位 -->
-          <div
-            class="virtual-scroll-content"
-            :style="{
-              transform: `translateY(${
-                virtualScroll.startIndex * virtualScroll.itemHeight
-              }px)`,
-            }"
-          >
-            <div
-              v-for="item in visibleItems"
-              :key="item.id"
-              class="content-item"
-              :class="{
-                active: selectedItem?.id === item.id,
-                favorite: item.is_favorite,
-                selected: selectedIds.has(item.id),
-              }"
-              @click="
-                isSelectionMode
-                  ? toggleItemSelection(item.id)
-                  : (copyItem(item, $event), selectItem(item))
-              "
-            >
-              <!-- 批量选择复选框 -->
-              <div v-if="isSelectionMode" class="item-checkbox">
-                <el-checkbox
-                  :model-value="selectedIds.has(item.id)"
-                  @change="toggleItemSelection(item.id)"
-                  @click.stop
-                />
-              </div>
-
-              <div class="item-icon">
-                <el-icon>
-                  <i-ep-Document
-                    style="color: var(--accent-blue)"
-                    v-if="item.type === 'text'"
-                  />
-                  <i-ep-Link
-                    style="color: var(--accent-green)"
-                    v-else-if="item.type === 'url'"
-                  />
-                  <i-ep-Tickets
-                    style="color: var(--accent-purple)"
-                    v-else-if="item.type === 'code'"
-                  />
-                  <i-ep-Picture
-                    style="color: var(--accent-red)"
-                    v-else-if="item.type === 'image'"
-                  />
-                  <i-ep-Document style="color: var(--accent-blue)" v-else />
-                </el-icon>
-              </div>
-              <div class="item-content">
-                <div class="item-title">
-                  {{ truncateText(item.content, 100) }}
-                </div>
-                <div class="item-meta">
-                  <span class="meta-time">
-                    <i-ep-Clock class="meta-icon" />
-                    {{ formatTime(item.timestamp) }}
-                  </span>
-                  <!-- 添加id信息展示 -->
-                  <span class="meta-id">
-                    ID: {{ item.id }}
-                  </span>
-                  <span class="meta-size">
-                    <i-ep-Document-Checked class="meta-icon" /> {{ item.size }}
-                  </span>
-                  <span class="meta-type" :class="`type-${item.type}`">
-                    <i-ep-InfoFilled class="meta-icon" />
-                    {{ getTypeLabel(item.type) }}
-                  </span>
-                  <span
-                    v-if="item.is_favorite"
-                    class="meta-type"
-                    :class="`type-favorite`"
-                  >
-                    <i-ep-Star class="meta-icon" />
-                    收藏
-                  </span>
-                </div>
-              </div>
-              <div class="item-actions">
-                <el-button
-                  class="item-action-btn"
-                  @click.stop="selectItem(item)"
-                  title="查看"
-                >
-                  <i-ep-view />
-                </el-button>
-                <el-button
-                  class="item-action-btn"
-                  @click.stop="toggleFavorite(item, $event)"
-                  :title="item.is_favorite ? '取消收藏' : '收藏'"
-                >
-                  <i-ep-Star class="icon-color" />
-                </el-button>
-                <el-button
-                  class="item-action-btn"
-                  @click.stop="clipboardStore.deleteItem(item.id, $event)"
-                  title="删除"
-                >
-                  <i-ep-Delete />
-                </el-button>
-              </div>
-            </div>
-
-            <!-- 全部加载完毕提示 -->
-            <div
-              v-if="
-                !isLoadingMore &&
-                clipboardData.length >= totalItems &&
-                clipboardData.length > 0
-              "
-              class="load-complete"
-            >
-              <span>已加载全部内容</span>
-            </div>
-          </div>
-        </template>
-      </div>
-
-      <!-- 加载更多指示器 -->
-      <div v-if="isLoadingMore && currentPage > 1" class="loading-more">
-        <el-icon class="is-loading"><i-ep-Loading /></el-icon>
-        <span>加载更多...</span>
-      </div>
+      <!-- 详情面板 -->
+      <DetailPanel
+        :item="selectedItem"
+        v-model:showAllContent="showAllContent"
+        @close="closeDetail"
+        @copy="copyItem"
+        @delete="clipboardStore.deleteItem"
+        @favorite="toggleFavorite"
+      />
     </div>
-
-    <!-- 详情面板 -->
-    <DetailPanel
-      :item="selectedItem"
-      :is-open="isOpen"
-      v-model:showAllContent="showAllContent"
-      @close="closeDetail"
-      @copy="copyItem"
-      @delete="clipboardStore.deleteItem"
-      @favorite="toggleFavorite"
-    />
   </div>
 </template>
 
 <style lang="scss" scoped>
-:root {
-  --detail-width: 320px;
-}
-
 .main-content {
   display: flex;
+  flex-direction: column;
   flex: 1;
   background: var(--bg-primary);
   height: 100%;
+  overflow: hidden;
+}
+
+.three-column-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -678,14 +510,28 @@ const deleteBatchItems = () => {
 
 /* 搜索区域 */
 .search-container {
-  padding: 0px 24px 12px 24px;
+  padding: 12px;
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .search-box {
   position: relative;
-  max-width: 400px;
+  flex: 1;
+  min-width: 0;
+}
+
+.search-action-btn {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+  font-size: 14px;
+  color: var(--text-secondary);
 }
 
 .search-icon {
@@ -705,42 +551,11 @@ const deleteBatchItems = () => {
   padding-left: 36px;
 }
 
-.search-filters {
-  display: flex;
-  gap: 10px;
-  margin-top: 12px;
-  flex-wrap: wrap;
-}
-
-.filter-tag {
-  padding: 4px 12px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-light);
-  border-radius: 20px;
-  font-size: 12px;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 3px;
-}
-
-.filter-tag:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-}
-
-.filter-tag.active {
-  background: var(--accent-blue);
-  color: white;
-  border-color: var(--accent-blue);
-}
-
 .content-container {
   display: flex;
   flex-direction: column;
-  flex: 1;
+  width: var(--list-width, 400px);
+  flex-shrink: 0;
   overflow: hidden;
   height: 100%;
 }
@@ -788,14 +603,13 @@ const deleteBatchItems = () => {
   border: 1px solid var(--border-light);
   border-radius: 10px;
   padding: 14px;
-  margin: 10px 20px;
+  margin: 7px 15px;
   cursor: pointer;
   transition: all 0.25s ease;
   position: relative;
   display: flex;
   align-items: center;
-  gap: 14px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  gap: 8px;
 
   &:hover {
     background: var(--bg-hover);
@@ -803,21 +617,13 @@ const deleteBatchItems = () => {
     background-origin: border-box;
     background-clip: padding-box, border-box;
     transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
   }
 
   &.active {
     background: var(--bg-active);
     border: 1px solid transparent;
-    background-image: linear-gradient(var(--bg-hover), var(--bg-hover)),
-      linear-gradient(
-        135deg,
-        var(--gradient-active-start) 0%,
-        var(--gradient-active-end) 100%
-      );
     background-origin: border-box;
     background-clip: padding-box, border-box;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
   }
 
   /* 选中状态样式 */
@@ -837,7 +643,8 @@ const deleteBatchItems = () => {
   justify-content: center;
   font-size: 20px;
   flex-shrink: 0;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
     0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
@@ -855,75 +662,25 @@ const deleteBatchItems = () => {
 }
 
 .item-title {
-  font-size: 15px;
-  font-weight: 500;
+  font-size: 14px;
   color: var(--text-primary);
-  margin-bottom: 6px;
   line-height: 1.5;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1;
   // 标准属性（未来兼容，目前主流浏览器尚未完全支持）
-  line-clamp: 2;
+  line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
   letter-spacing: 0.01em;
 }
 
-.item-meta {
-  display: flex;
-  align-items: center;
-  gap: 16px;
+.item-time {
   font-size: 12px;
-  color: var(--text-secondary);
-  line-height: 1.4;
-
-  .meta-icon {
-    font-size: 12px;
-    margin-right: 4px;
-    opacity: 0.9;
-    vertical-align: -2px;
-  }
-
-  .meta-time,
-  .meta-size,
-  .meta-type,
-  .meta-id {
-    display: inline-flex;
-    align-items: center;
-  }
-
-  .meta-type {
-    padding: 2px 8px;
-    border-radius: 10px;
-    background: rgba(0, 0, 0, 0.04);
-    font-weight: 500;
-    font-size: 11px;
-
-    &.type-text {
-      background: var(--type-text-bg);
-      color: var(--accent-blue);
-    }
-
-    &.type-url {
-      background: var(--type-url-bg);
-      color: var(--accent-green);
-    }
-
-    &.type-code {
-      background: var(--type-code-bg);
-      color: var(--accent-purple);
-    }
-
-    &.type-image {
-      background: var(--type-image-bg);
-      color: var(--accent-red);
-    }
-
-    &.type-favorite {
-      background: var(--type-favorite-bg);
-      color: var(--accent-yellow);
-    }
-  }
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+  margin-left: 8px;
+  align-self: center;
 }
 
 .item-actions {
