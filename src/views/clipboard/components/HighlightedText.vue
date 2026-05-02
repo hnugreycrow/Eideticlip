@@ -1,7 +1,18 @@
 <template>
-  <div class="highlighted-text">
+  <div ref="rootRef" class="highlighted-text">
     <pre
-      v-if="isCode"
+      v-if="isCode && chunked"
+      class="hljs code-block"
+    ><code><span
+        v-for="(html, i) in chunkHtml"
+        :key="i"
+        :data-idx="i"
+        :ref="(el) => setChunkRef(el, i)"
+        class="hl-chunk"
+        v-html="html"
+      ></span></code></pre>
+    <pre
+      v-else-if="isCode"
       class="hljs code-block"
     ><code v-html="highlightedCode"></code></pre>
     <div v-else class="plain-text" v-html="highlightedText"></div>
@@ -9,7 +20,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, watch } from "vue";
+import {
+  computed,
+  nextTick,
+  onMounted,
+  onUnmounted,
+  ref,
+  shallowRef,
+  watch,
+} from "vue";
 import hljs from "highlight.js/lib/core";
 import javascript from "highlight.js/lib/languages/javascript";
 import typescript from "highlight.js/lib/languages/typescript";
@@ -44,17 +63,15 @@ hljs.registerLanguage("python", python);
 // 根据主题动态切换 highlight.js 的样式文件
 const HLJS_LINK_ID = "hljs-theme-css";
 
-// ✅ 模块作用域变量：所有实例共享
+// 模块作用域变量：所有实例共享
 let instanceCount = 0;
 let currentLinkElement: HTMLLinkElement | null = null;
 
 function createLink(href: string) {
-  // 先移除旧的
   if (currentLinkElement) {
     currentLinkElement.remove();
     currentLinkElement = null;
   }
-  // 创建新的
   const link = document.createElement("link");
   link.id = HLJS_LINK_ID;
   link.rel = "stylesheet";
@@ -75,16 +92,13 @@ function applyHljsTheme(theme: string) {
   createLink(href);
 }
 
-// 挂载时：计数 +1
 onMounted(() => {
   instanceCount++;
-  // 只有第一个实例才创建链接（或者重新应用主题）
   if (instanceCount === 1) {
     applyHljsTheme(themeService.currentTheme.value);
   }
 });
 
-// 主题切换时：只在有活跃实例时才更新链接
 watch(
   () => themeService.currentTheme.value,
   (t) => {
@@ -94,7 +108,6 @@ watch(
   }
 );
 
-// 卸载时：计数 -1，只有归零才移除
 onUnmounted(() => {
   instanceCount--;
   if (instanceCount === 0) {
@@ -102,9 +115,6 @@ onUnmounted(() => {
   }
 });
 
-/**
- * 转义 HTML 字符
- */
 function escapeHtml(str: string) {
   return str
     .replace(/&/g, "&amp;")
@@ -114,45 +124,172 @@ function escapeHtml(str: string) {
     .replace(/'/g, "&#39;");
 }
 
-/**
- * 高亮代码内容，返回 HTML 字符串
- */
+// ===== 短内容：单次高亮（保留原行为） =====
 const highlightedCode = computed(() => {
   const txt = props.content || "";
-  const MAX_CODE_HL_LENGTH = 6000;
   try {
     if (!txt) return "";
-    // 长文本降级：超出阈值时不做代码高亮，避免卡顿
-    if (txt.length > MAX_CODE_HL_LENGTH) {
-      return escapeHtml(txt);
-    }
     if (props.language) {
-      // try using specified language
-      const res = hljs.highlight(txt, { language: props.language });
-      return res.value;
+      return hljs.highlight(txt, {
+        language: props.language,
+        ignoreIllegals: true,
+      }).value;
     }
-    const res = hljs.highlightAuto(txt);
-    return res.value;
-  } catch (e) {
-    // fallback to escaped raw
+    return hljs.highlightAuto(txt).value;
+  } catch {
     return escapeHtml(txt);
   }
 });
 
-/**
- * 高亮普通文本内容中的搜索词，返回 HTML 字符串
- */
 const highlightedText = computed(() => {
   const txt = props.content || "";
   if (!props.search) return escapeHtml(txt).replace(/\n/g, "<br/>");
-
-  // 简单地高亮搜索词（不区分HTML）
   const escaped = escapeHtml(txt);
   const term = props.search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const re = new RegExp(term, "gi");
   return escaped
     .replace(re, (m) => `<mark>${m}</mark>`)
     .replace(/\n/g, "<br/>");
+});
+
+// ===== 长内容：按视口分块高亮 =====
+const CHUNK_THRESHOLD = 4000; // 超过此长度才启用切块
+const CHUNK_LINES = 80; // 每块行数
+const PER_CHUNK_MAX = 8000; // 单块字符数硬上限，超过则该块不高亮
+const ROOT_MARGIN = "400px 400px"; // 视口外预热范围
+
+const rootRef = ref<HTMLElement | null>(null);
+const chunks = shallowRef<string[]>([]);
+const chunkHtml = shallowRef<string[]>([]);
+const chunkEls = new Map<number, HTMLElement>();
+const highlighted = new Set<number>();
+let observer: IntersectionObserver | null = null;
+
+const chunked = computed(
+  () => isCode.value && (props.content?.length ?? 0) > CHUNK_THRESHOLD
+);
+
+function splitChunks(text: string): string[] {
+  const lines = text.split("\n");
+  const out: string[] = [];
+  for (let i = 0; i < lines.length; i += CHUNK_LINES) {
+    let chunk = lines.slice(i, i + CHUNK_LINES).join("\n");
+    // 在块之间补回原始的换行，保证 <pre> 内拼接后行号不丢
+    if (i + CHUNK_LINES < lines.length) chunk += "\n";
+    out.push(chunk);
+  }
+  return out;
+}
+
+function highlightChunk(i: number) {
+  if (highlighted.has(i)) return;
+  const text = chunks.value[i];
+  if (text == null) return;
+  highlighted.add(i);
+
+  let html: string;
+  if (text.length > PER_CHUNK_MAX) {
+    html = escapeHtml(text);
+  } else {
+    try {
+      html = hljs.highlightAuto(text).value;
+    } catch {
+      html = escapeHtml(text);
+    }
+  }
+
+  const next = chunkHtml.value.slice();
+  next[i] = html;
+  chunkHtml.value = next;
+}
+
+function findScrollRoot(start: HTMLElement | null): Element | null {
+  let el: HTMLElement | null = start?.parentElement ?? null;
+  while (el && el !== document.body) {
+    const oy = getComputedStyle(el).overflowY;
+    if (oy === "auto" || oy === "scroll") return el;
+    el = el.parentElement;
+  }
+  return null;
+}
+
+function setChunkRef(el: unknown, i: number) {
+  const node = el as HTMLElement | null;
+  if (node) {
+    chunkEls.set(i, node);
+    if (observer) observer.observe(node);
+  } else {
+    const prev = chunkEls.get(i);
+    if (prev && observer) observer.unobserve(prev);
+    chunkEls.delete(i);
+  }
+}
+
+function teardownObserver() {
+  if (observer) {
+    observer.disconnect();
+    observer = null;
+  }
+}
+
+async function setupObserver() {
+  teardownObserver();
+  if (typeof IntersectionObserver === "undefined") {
+    // 兜底：没有 IO 时一次性高亮全部块
+    for (let i = 0; i < chunks.value.length; i++) highlightChunk(i);
+    return;
+  }
+  // el-dialog 使用 destroy-on-close 重新挂载；等过渡走一帧再绑 observer，
+  // 避免 scroll root 布局尚未稳定。
+  await nextTick();
+  await new Promise<void>((r) => requestAnimationFrame(() => r()));
+  if (!chunked.value) return;
+  const root = findScrollRoot(rootRef.value);
+  observer = new IntersectionObserver(
+    (entries) => {
+      for (const e of entries) {
+        if (!e.isIntersecting) continue;
+        const idxAttr = (e.target as HTMLElement).dataset.idx;
+        if (idxAttr == null) continue;
+        const i = Number(idxAttr);
+        highlightChunk(i);
+        observer?.unobserve(e.target);
+      }
+    },
+    { root, rootMargin: ROOT_MARGIN, threshold: 0 }
+  );
+  for (const node of chunkEls.values()) observer.observe(node);
+}
+
+function rebuild() {
+  teardownObserver();
+  chunkEls.clear();
+  highlighted.clear();
+  if (!chunked.value) {
+    chunks.value = [];
+    chunkHtml.value = [];
+    return;
+  }
+  const split = splitChunks(props.content || "");
+  chunks.value = split;
+  chunkHtml.value = split.map(escapeHtml);
+  setupObserver();
+}
+
+onMounted(() => {
+  rebuild();
+});
+
+watch(
+  () => [props.content, props.language, props.type],
+  () => rebuild(),
+  { flush: "post" }
+);
+
+onUnmounted(() => {
+  teardownObserver();
+  chunkEls.clear();
+  highlighted.clear();
 });
 </script>
 
@@ -169,6 +306,9 @@ const highlightedText = computed(() => {
   border-radius: 6px;
   background: transparent;
   overflow: auto;
+}
+.hl-chunk {
+  display: inline;
 }
 mark {
   background: rgba(255, 229, 100, 0.25);
