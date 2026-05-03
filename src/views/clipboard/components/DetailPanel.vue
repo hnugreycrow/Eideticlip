@@ -178,10 +178,6 @@ const displayContent = computed(() => {
   return content;
 });
 
-const closeDetail = () => {
-  emit("close");
-};
-
 const copyItem = (item: Item) => {
   emit("copy", item);
 };

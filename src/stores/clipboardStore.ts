@@ -4,9 +4,6 @@ import { ClipboardItem, TypeCounts } from '@/utils/type';
 import { formatSize, getContentType } from '@/utils/utils';
 import { ElMessage, ElMessageBox } from 'element-plus'; // 确保导入UI组件
 
-// 定义仓库类型（用于约束 this）
-type ClipboardStore = ReturnType<typeof useClipboardStore>;
-
 export const useClipboardStore = defineStore('clipboard', {
   state: () => ({
     clipboardData: [] as ClipboardItem[],
@@ -16,6 +13,7 @@ export const useClipboardStore = defineStore('clipboard', {
     totalItems: 0,
     isLoadingMore: false,
     typeCounts: { all: 0, text: 0, url: 0, code: 0, favorite: 0 } as TypeCounts,
+    searchKeyword: '' as string,
   }),
 
   actions: {
@@ -29,12 +27,15 @@ export const useClipboardStore = defineStore('clipboard', {
     },
 
     // 加载剪贴板历史（原 useClipboard 中的核心方法）
-    async loadClipboardHistory(this: ClipboardStore, page = 1, append = false, type = this.activeFilter) {
+    async loadClipboardHistory(page = 1, append = false, type?: string, keyword?: string) {
       this.isLoadingMore = true;
       this.currentPage = page;
 
+      const effectiveType = type ?? this.activeFilter;
+      const effectiveKeyword = keyword ?? this.searchKeyword;
+
       try {
-        const result = await window.clipboard.getHistory(page, this.pageSize, type);
+        const result = await window.clipboard.getHistory(page, this.pageSize, effectiveType, effectiveKeyword);
         if (result?.total !== undefined) {
           this.totalItems = result.total;
         }
@@ -46,8 +47,8 @@ export const useClipboardStore = defineStore('clipboard', {
             timestamp: new Date(item.timestamp),
           }));
 
-          this.clipboardData = append && page > 1 
-            ? [...this.clipboardData, ...processedHistory] 
+          this.clipboardData = append && page > 1
+            ? [...this.clipboardData, ...processedHistory]
             : processedHistory;
         } else if (!append) {
           this.clipboardData = [];
@@ -58,6 +59,15 @@ export const useClipboardStore = defineStore('clipboard', {
       } finally {
         this.isLoadingMore = false;
       }
+    },
+
+    // 设置搜索关键词，重置分页并重新加载
+    setSearchKeyword(keyword: string) {
+      const next = (keyword || '').trim();
+      if (next === this.searchKeyword) return;
+      this.searchKeyword = next;
+      this.currentPage = 1;
+      this.loadClipboardHistory(1, false);
     },
 
     // 保存单个剪贴板项

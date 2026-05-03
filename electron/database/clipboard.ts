@@ -264,70 +264,64 @@ export function getClipboardHistoryCount() {
 }
 
 /**
- * 获取剪贴板历史（支持分页和按类型筛选）
+ * 转义 LIKE 通配符，避免用户输入中的 % _ \ 被当成模式字符
+ */
+function escapeLike(s: string): string {
+  return s.replace(/[\\%_]/g, (c) => "\\" + c);
+}
+
+/**
+ * 获取剪贴板历史（支持分页、按类型筛选、关键词搜索）
  * @param page 页码（从1开始）
  * @param pageSize 每页数量
  * @param type 可选的类型筛选
+ * @param keyword 可选的关键词，按 content 做 LIKE 模糊匹配
  * @returns 剪贴板历史列表和总数
  */
-export function getClipboardHistory(page = 1, pageSize = 50, type = "all") {
+export function getClipboardHistory(
+  page = 1,
+  pageSize = 50,
+  type = "all",
+  keyword = ""
+) {
   try {
-    // 计算偏移量
     const offset = (page - 1) * pageSize;
 
-    // 根据是否有类型筛选构建不同的查询
-    let selectQuery, countQuery;
-    let params = [];
+    const whereClauses: string[] = [];
+    const filterParams: any[] = [];
 
-    if (type && type !== "all" && type !== "favorite") {
-      // 按类型筛选
-      selectQuery = `
-        SELECT * FROM clipboard_items 
-        WHERE type = ? 
-        ORDER BY id DESC LIMIT ? OFFSET ?
-      `;
-      countQuery = `
-        SELECT COUNT(*) as total FROM clipboard_items 
-        WHERE type = ?
-      `;
-      params = [type, pageSize, offset];
-    } else if (type === "favorite") {
-      // 收藏筛选
-      selectQuery = `
-        SELECT * FROM clipboard_items 
-        WHERE is_favorite = 1 
-        ORDER BY id DESC LIMIT ? OFFSET ?
-      `;
-      countQuery = `
-        SELECT COUNT(*) as total FROM clipboard_items 
-        WHERE is_favorite = 1
-      `;
-      params = [pageSize, offset];
-    } else {
-      // 不筛选
-      selectQuery = `
-        SELECT * FROM clipboard_items 
-        ORDER BY id DESC LIMIT ? OFFSET ?
-      `;
-      countQuery = `
-        SELECT COUNT(*) as total FROM clipboard_items
-      `;
-      params = [pageSize, offset];
+    if (type === "favorite") {
+      whereClauses.push("is_favorite = 1");
+    } else if (type && type !== "all") {
+      whereClauses.push("type = ?");
+      filterParams.push(type);
     }
 
-    // 获取总数
-    let totalResult;
-    if (type && type !== "all" && type !== "favorite") {
-      totalResult = db.prepare(countQuery).get(type);
-    } else if (type === "favorite") {
-      totalResult = db.prepare(countQuery).get();
-    } else {
-      totalResult = db.prepare(countQuery).get();
+    const trimmedKeyword = (keyword || "").trim();
+    if (trimmedKeyword) {
+      whereClauses.push("content LIKE ? COLLATE NOCASE ESCAPE '\\'");
+      filterParams.push(`%${escapeLike(trimmedKeyword)}%`);
     }
+
+    const whereSql =
+      whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
+
+    const selectQuery = `
+      SELECT * FROM clipboard_items
+      ${whereSql}
+      ORDER BY id DESC LIMIT ? OFFSET ?
+    `;
+    const countQuery = `
+      SELECT COUNT(*) as total FROM clipboard_items
+      ${whereSql}
+    `;
+
+    const totalResult = db.prepare(countQuery).get(...filterParams);
     const total = totalResult ? totalResult.total : 0;
 
-    // 获取分页数据
-    const items = db.prepare(selectQuery).all(...params);
+    const items = db
+      .prepare(selectQuery)
+      .all(...filterParams, pageSize, offset);
 
     return {
       items,

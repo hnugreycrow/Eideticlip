@@ -54,7 +54,7 @@ export interface ClipboardAPI {
   deleteItem: (id: number) => Promise<boolean>;
   deleteBatch: (idsToDelete: number[]) => Promise<DeleteBatchResult>;
   clearAll: () => Promise<boolean>;
-  getHistory: (page: number, pageSize: number, type: string) => Promise<ClipboardHistoryResult>;
+  getHistory: (page: number, pageSize: number, type: string, keyword?: string) => Promise<ClipboardHistoryResult>;
   // 收藏
   setFavorite: (id: number, isFavorite: boolean) => Promise<boolean>;
   getFavorites: () => Promise<ClipboardItem[]>;

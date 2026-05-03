@@ -19,17 +19,17 @@ const clipboardStore = useClipboardStore();
 const { clipboardData, isLoadingMore, activeFilter, totalItems, currentPage } =
   storeToRefs(clipboardStore);
 
-// 搜索功能
-const { searchQuery, filteredData } = useSearch(() => clipboardData.value);
+// 搜索功能（输入下推到 store，由后端 SQL LIKE 处理）
+const { searchQuery } = useSearch();
 
 // 选择功能
 const {
   selectedIds,
-} = useSelection(() => filteredData.value);
+} = useSelection(() => clipboardData.value);
 
 // 虚拟滚动
 const { contentListRef, virtualScroll, visibleItems, handleScroll } =
-  useVirtualScroll(() => filteredData.value);
+  useVirtualScroll(() => clipboardData.value);
 
 const selectedItem = ref<ClipboardItem | null>(null);
 
@@ -72,15 +72,6 @@ const showAllContent = ref(false);
 const selectItem = (item: ClipboardItem) => {
   showAllContent.value = false;
   selectedItem.value = item;
-};
-
-/**
- * 清空选中（详情面板常驻，回到空态）
- * @returns {void}
- */
-const closeDetail = () => {
-  showAllContent.value = false;
-  selectedItem.value = null;
 };
 
 /**
@@ -173,81 +164,6 @@ onActivated(() => {
   handleScroll();
   clipboardStore.refreshCounts();
 });
-
-/**
- * 批量删除选中的项目
- */
-const deleteBatchItems = () => {
-  if (selectedIds.value.size === 0) {
-    ElMessage({
-      message: "请先选择要删除的项目",
-      type: "warning",
-    });
-    return;
-  }
-
-  ElMessageBox.confirm(
-    `确定要删除选中的 ${selectedIds.value.size} 个项目吗？`,
-    "批量删除确认",
-    {
-      confirmButtonText: "确认删除",
-      cancelButtonText: "取消",
-      type: "warning",
-    },
-  ).then(() => {
-    const idsToDelete = Array.from(selectedIds.value);
-
-    // 先从本地数据中移除
-    const deletedItems = [];
-    for (let i = clipboardData.value.length - 1; i >= 0; i--) {
-      const item = clipboardData.value[i];
-      if (selectedIds.value.has(item.id)) {
-        deletedItems.push(clipboardData.value.splice(i, 1)[0]);
-      }
-    }
-
-    // 更新总数
-    totalItems.value -= deletedItems.length;
-
-    // 清空选中状态
-    selectedIds.value.clear();
-
-    // 如果当前选中的项目被删除，清空选中
-    if (selectedItem.value && idsToDelete.includes(selectedItem.value.id)) {
-      selectedItem.value = null;
-    }
-
-    ElMessage({
-      message: `已删除 ${deletedItems.length} 个项目`,
-      type: "success",
-    });
-
-    // 调用后端批量删除
-    window.clipboard
-      .deleteBatch(idsToDelete)
-      .then((result) => {
-        if (!result.success && result.failedIds.length > 0) {
-          console.error("部分项目删除失败:", result.failedIds);
-          // 如果有删除失败的项目，重新加载数据以保持一致性
-          clipboardStore.loadClipboardHistory();
-          ElMessage({
-            message: `${result.failedIds.length} 个项目删除失败，已重新加载数据`,
-            type: "warning",
-          });
-        }
-        clipboardStore.refreshCounts();
-      })
-      .catch((error) => {
-        console.error("批量删除出错:", error);
-        // 发生错误时重新加载数据以保持一致性
-        clipboardStore.loadClipboardHistory();
-        ElMessage({
-          message: "删除失败，已重新加载数据",
-          type: "error",
-        });
-      });
-  });
-};
 </script>
 
 <template>
@@ -372,7 +288,6 @@ const deleteBatchItems = () => {
       <DetailPanel
         :item="selectedItem"
         v-model:showAllContent="showAllContent"
-        @close="closeDetail"
         @copy="copyItem"
         @delete="clipboardStore.deleteItem"
         @favorite="toggleFavorite"
