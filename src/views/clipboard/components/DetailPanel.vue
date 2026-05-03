@@ -231,10 +231,6 @@ const closeZoomView = () => {
   color: var(--text-secondary);
 }
 
-.detail-close {
-  font-size: 16px;
-}
-
 .detail-header-actions {
   display: flex;
   align-items: center;
@@ -271,17 +267,6 @@ const closeZoomView = () => {
   display: flex;
   align-items: center;
   gap: 12px;
-}
-
-.detail-type-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  background: var(--bg-active);
 }
 
 .detail-type-label.type-text {
@@ -394,15 +379,6 @@ const closeZoomView = () => {
   justify-content: center;
   color: var(--text-secondary);
   text-align: center;
-}
-
-.detail-text-header {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  margin-bottom: 12px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--border-light);
 }
 
 .expend-button {

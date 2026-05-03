@@ -12,7 +12,7 @@ import { storeToRefs } from "pinia";
 
 // 定义组件名称，用于keep-alive识别
 defineOptions({
-  name: "clipboard",
+  name: "Clipboard",
 });
 
 const clipboardStore = useClipboardStore();
@@ -32,7 +32,6 @@ const { contentListRef, virtualScroll, visibleItems, handleScroll } =
   useVirtualScroll(() => filteredData.value);
 
 const selectedItem = ref<ClipboardItem | null>(null);
-let clipboardWatcherCleanup: (() => void) | null = null; // 剪贴板监听清理函数
 
 // 监听类型过滤器变化，重新加载数据
 watch(activeFilter, (newType) => {
@@ -147,53 +146,7 @@ const copyItem = (item: ClipboardItem, event?: Event) => {
     });
 };
 
-/**
- * 启动剪贴板监听
- * @returns {void}
- */
-const startClipboardWatcher = () => {
-  // 如果已经有监听清理函数，说明监听已经启动，不需要重新启动
-  if (clipboardWatcherCleanup) {
-    console.log("剪贴板监听已经在运行中，无需重新启动");
-    return;
-  }
 
-  // 启动监听
-  window.clipboard
-    .startWatching()
-    .then(() => {
-      // 设置变化回调
-      clipboardWatcherCleanup = window.clipboard.onChanged(async (content) => {
-        if (content && content.trim() !== "") {
-          await clipboardStore.addClipboardItem(content);
-        }
-      });
-    })
-    .catch((error) => {
-      console.error("启动剪贴板监听失败:", error);
-    });
-};
-
-/**
- * 停止剪贴板监听
- * @returns {void}
- */
-const stopClipboardWatcher = () => {
-  // 停止监听
-  if (clipboardWatcherCleanup) {
-    clipboardWatcherCleanup();
-    clipboardWatcherCleanup = null;
-
-    window.clipboard
-      .stopWatching()
-      .then(() => {
-        console.log("剪贴板监听已停止");
-      })
-      .catch((error) => {
-        console.error("停止剪贴板监听失败:", error);
-      });
-  }
-};
 
 // 组件挂载时启动监听，加载历史记录，卸载时停止监听
 onMounted(() => {
@@ -201,8 +154,6 @@ onMounted(() => {
   clipboardStore.loadClipboardHistory(1, false, activeFilter.value);
   // 拉取分类计数
   clipboardStore.refreshCounts();
-  // 启动剪贴板监听
-  startClipboardWatcher();
 
   setTimeout(() => {
     // 初始化滚动参数
@@ -213,8 +164,6 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  console.log("组件卸载");
-  stopClipboardWatcher();
   window.removeEventListener("resize", handleScroll);
 });
 
@@ -449,65 +398,6 @@ const deleteBatchItems = () => {
   overflow: hidden;
 }
 
-/* 内容头部 */
-.content-header {
-  height: 60px;
-  padding: 10px 24px;
-  background: var(--bg-secondary);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.header-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin: 0;
-}
-
-.header-stats {
-  font-size: 13px;
-  color: var(--text-secondary);
-}
-
-.header-actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.batch-actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  padding: 8px 12px;
-  border-radius: 8px;
-}
-
-.action-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-left: 0px;
-  color: var(--text-primary);
-
-  &.primary {
-    color: var(--text-inverse);
-  }
-
-  &:disabled {
-    color: var(--text-tertiary);
-    border-color: var(--border-light);
-  }
-}
-
 /* 搜索区域 */
 .search-container {
   padding: 12px;
@@ -648,14 +538,6 @@ const deleteBatchItems = () => {
     0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.item-checkbox {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  margin-right: 4px;
-}
-
 .item-content {
   flex: 1;
   min-width: 0;
@@ -683,40 +565,7 @@ const deleteBatchItems = () => {
   align-self: center;
 }
 
-.item-actions {
-  display: flex;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  gap: 6px;
-}
-
-.content-item:hover .item-actions {
-  opacity: 1;
-}
-
-.item-action-btn {
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  min-height: auto;
-  border-radius: 6px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  transition: all 0.2s ease;
-  color: var(--text-secondary);
-  margin-left: 2px;
-
-  &:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-    color: var(--text-primary);
-  }
-}
-
 /* 加载指示器样式 */
-.loading-indicator,
 .loading-more,
 .load-complete {
   display: flex;

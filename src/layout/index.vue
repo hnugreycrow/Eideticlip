@@ -2,7 +2,10 @@
 import Header from "./header/index.vue";
 import Sidebar from "./sidebar/index.vue";
 import { useRouter } from "vue-router";
-import { computed } from "vue";
+import { computed, onMounted, onUnmounted } from "vue";
+import { useClipboardStore } from "@/stores/clipboardStore";
+
+const clipboardStore = useClipboardStore();
 
 const router = useRouter();
 
@@ -13,6 +16,64 @@ const cacheRoutes = computed<string[]>(() =>
     .map(r => r.name) 
     .filter((name): name is string => typeof name === "string")
 );
+
+let clipboardWatcherCleanup: (() => void) | null = null; // 剪贴板监听清理函数
+
+/**
+ * 启动剪贴板监听
+ * @returns {void}
+ */
+const startClipboardWatcher = () => {
+  // 如果已经有监听清理函数，说明监听已经启动，不需要重新启动
+  if (clipboardWatcherCleanup) {
+    console.log("剪贴板监听已经在运行中，无需重新启动");
+    return;
+  }
+
+  // 启动监听
+  window.clipboard
+    .startWatching()
+    .then(() => {
+      // 设置变化回调
+      clipboardWatcherCleanup = window.clipboard.onChanged(async (content) => {
+        if (content && content.trim() !== "") {
+          await clipboardStore.addClipboardItem(content);
+        }
+      });
+    })
+    .catch((error) => {
+      console.error("启动剪贴板监听失败:", error);
+    });
+};
+
+/**
+ * 停止剪贴板监听
+ * @returns {void}
+ */
+const stopClipboardWatcher = () => {
+  // 停止监听
+  if (clipboardWatcherCleanup) {
+    clipboardWatcherCleanup();
+    clipboardWatcherCleanup = null;
+
+    window.clipboard
+      .stopWatching()
+      .then(() => {
+        console.log("剪贴板监听已停止");
+      })
+      .catch((error) => {
+        console.error("停止剪贴板监听失败:", error);
+      });
+  }
+};
+
+onMounted(() => {
+  startClipboardWatcher();
+});
+
+onUnmounted(() => {
+  stopClipboardWatcher();
+})
 </script>
 
 <template>
@@ -25,10 +86,9 @@ const cacheRoutes = computed<string[]>(() =>
         <Sidebar />
         <el-main>
           <router-view v-slot="{ Component, route }">
-            <keep-alive v-if="route.meta.keepAlive" :include="cacheRoutes">
-              <component :is="Component" />
+            <keep-alive :include="cacheRoutes">
+              <component :is="Component" :key="route.path" />
             </keep-alive>
-            <component v-else :is="Component" />
           </router-view>
         </el-main>
       </el-container>
