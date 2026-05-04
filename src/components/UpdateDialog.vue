@@ -4,7 +4,7 @@ import { ArrowRight, Download, Check } from '@element-plus/icons-vue';
 
 const updateAvailable = ref<boolean>(false);
 const updateInfo = ref<any>(null);
-const updateProgress = ref<number>(10);
+const updateProgress = ref<number>(0);
 const isDownloading = ref<boolean>(false);
 const updateDownloaded = ref<boolean>(false);
 const showDialog = ref<boolean>(false);
