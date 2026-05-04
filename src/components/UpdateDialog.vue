@@ -1,78 +1,60 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
+import { ArrowRight, Download, Check } from '@element-plus/icons-vue';
 
-// 更新状态相关的响应式变量
 const updateAvailable = ref<boolean>(false);
 const updateInfo = ref<any>(null);
-const updateProgress = ref<number>(0);
+const updateProgress = ref<number>(10);
 const isDownloading = ref<boolean>(false);
 const updateDownloaded = ref<boolean>(false);
 const showDialog = ref<boolean>(false);
 const currentVersion = ref<string>('1.0.0');
 
-// 控制更新内容折叠状态
-const activeCollapse = ref<string[]>([]);
-
-// 清理函数，用于移除事件监听器
 let removeUpdateListener: (() => void) | null = null;
 
-// 组件挂载时设置更新状态监听并自动检查更新
 onMounted(async () => {
-  // 获取当前应用版本
   try {
     const version = await window.ipcRenderer.invoke('app-get-version');
-    if (version) {
-      currentVersion.value = version;
-    }
+    if (version) currentVersion.value = version;
   } catch (error) {
     console.error('获取应用版本失败:', error);
   }
 
-  // 监听更新状态
   removeUpdateListener = window.updater.onUpdateStatus((status) => {
-    console.log('更新状态:', status);
-    
     if (status.status === 'update-available') {
       updateAvailable.value = true;
       updateInfo.value = status.data;
-      // 添加当前版本信息到更新信息中
       if (updateInfo.value) {
         updateInfo.value.currentVersion = currentVersion.value;
       }
-      showDialog.value = true; // 自动显示弹窗
+      showDialog.value = true;
     } else if (status.status === 'update-not-available') {
       updateAvailable.value = false;
     } else if (status.status === 'download-progress') {
       isDownloading.value = true;
-      updateProgress.value = status.data.percent || 0;
+      updateProgress.value = Math.round(status.data.percent || 0);
     } else if (status.status === 'update-downloaded') {
       isDownloading.value = false;
       updateDownloaded.value = true;
     } else if (status.status === 'error') {
       isDownloading.value = false;
-      ElMessage.error('更新检查失败: ' + status.data.message.substring(0, 100) || '未知错误');
+      ElMessage.error('更新失败: ' + (status.data.message?.substring(0, 100) || '未知错误'));
     }
   });
-  
-  // 应用启动时自动检查更新
+
   setTimeout(async () => {
     try {
-      console.log('自动检查更新...');
       await window.updater.checkForUpdates();
     } catch (error) {
       console.error('自动检查更新失败:', error);
     }
-  }, 3000); // 延迟3秒检查更新，确保应用已完全加载
+  }, 3000);
 });
 
-// 组件卸载时清理事件监听器
 onUnmounted(() => {
-  if (removeUpdateListener) {
-    removeUpdateListener();
-  }
+  if (removeUpdateListener) removeUpdateListener();
 });
 
-// 下载更新
 const downloadUpdate = async () => {
   try {
     isDownloading.value = true;
@@ -83,7 +65,6 @@ const downloadUpdate = async () => {
   }
 };
 
-// 安装更新
 const installUpdate = async () => {
   try {
     await window.updater.installUpdate();
@@ -92,12 +73,6 @@ const installUpdate = async () => {
   }
 };
 
-// 关闭弹窗
-const closeDialog = () => {
-  showDialog.value = false;
-};
-
-// 稍后提醒
 const remindLater = () => {
   showDialog.value = false;
 };
@@ -106,68 +81,106 @@ const remindLater = () => {
 <template>
   <el-dialog
     v-model="showDialog"
-    title="发现新版本"
-    width="450px"
+    width="420px"
     :close-on-click-modal="false"
-    :show-close="true"
     class="update-dialog"
     top="15vh"
   >
-    <div class="update-content">
-      <div class="update-header">
-        <div class="update-icon">
-           <img src="/electron.svg" class="icon" alt="Logo" />
+    <div class="update-body">
+      <!-- 标题区 -->
+      <div class="update-head">
+        <div class="title-block">
+          <p class="eyebrow">有可用更新</p>
+          <h2 class="main-title">v{{ updateInfo?.version || "–" }} 已发布</h2>
         </div>
-        <h3 class="update-title">新版本可用</h3>
-      </div>
-      
-      <div v-if="updateInfo" class="update-info">
-        <div class="version-card">
-          <div class="version-item">
-            <span class="version-label">当前版本</span>
-            <span class="version-value">{{ updateInfo.currentVersion || '未知' }}</span>
-          </div>
-          <div class="version-divider">
-            <i-ep-arrow-right />
-          </div>
-          <div class="version-item">
-            <span class="version-label">新版本</span>
-            <span class="version-value highlight">{{ updateInfo.version || '未知' }}</span>
-          </div>
-        </div>
-        
-        <div v-if="updateInfo.releaseNotes" class="release-notes">
-          <el-collapse v-model="activeCollapse" class="notes-collapse">
-            <el-collapse-item title="更新内容" name="releaseNotes">
-              <div class="notes-content" v-html="updateInfo.releaseNotes"></div>
-            </el-collapse-item>
-          </el-collapse>
+        <div class="app-icon">
+          <img src="/electron.svg" alt="App icon" />
         </div>
       </div>
-      
-      <div v-if="isDownloading" class="download-progress">
-        <p>正在下载更新...</p>
-        <el-progress 
-          :percentage="updateProgress" 
-          :format="(format: any) => `${format.toFixed(0)}%`"
-          :stroke-width="8"
-          class="progress-bar"
+
+      <!-- 版本对比 -->
+      <div class="version-row">
+        <div class="version-cell">
+          <span class="v-label">当前版本</span>
+          <span class="v-num"
+            >v{{ updateInfo?.currentVersion || currentVersion }}</span
+          >
+        </div>
+        <el-icon class="v-arrow"><ArrowRight /></el-icon>
+        <div class="version-cell">
+          <span class="v-label">最新版本</span>
+          <span class="v-num new">v{{ updateInfo?.version || "–" }}</span>
+        </div>
+      </div>
+
+      <!-- 更新日志 -->
+      <div v-if="updateInfo?.releaseNotes" class="release-notes">
+        <p class="notes-title">更新内容</p>
+        <div class="notes-body" v-html="updateInfo.releaseNotes" />
+      </div>
+
+      <!-- 下载进度 -->
+      <div v-if="isDownloading" class="progress-area">
+        <div class="progress-header">
+          <span class="progress-label">正在下载更新</span>
+          <span class="progress-pct">{{ updateProgress }}%</span>
+        </div>
+        <el-progress
+          :percentage="updateProgress"
+          :show-text="false"
+          :stroke-width="6"
+          striped
+          striped-flow
+          :duration="10"
         />
       </div>
-      
-      <div class="update-actions">
+
+      <!-- 操作按钮 -->
+      <div class="actions">
         <template v-if="!isDownloading && !updateDownloaded">
-          <el-button type="primary" @click="downloadUpdate">
-            <i-ep-download></i-ep-download>下载更新
+          <el-button
+            type="primary"
+            size="large"
+            style="width: 100%"
+            @click="downloadUpdate"
+          >
+            <el-icon><Download /></el-icon>
+            立即下载安装
           </el-button>
-          <el-button @click="remindLater">稍后提醒</el-button>
+          <el-button
+            size="large"
+            style="width: 100%; margin-left: 0"
+            text
+            @click="remindLater"
+          >
+            稍后提醒
+          </el-button>
         </template>
-        
-        <template v-if="updateDownloaded">
-          <el-button type="success" @click="installUpdate">
-            <i-ep-check></i-ep-check>立即安装
+
+        <template v-if="isDownloading">
+          <el-button type="primary" size="large" style="width: 100%" disabled>
+            正在下载中…
           </el-button>
-          <el-button @click="closeDialog">稍后安装</el-button>
+        </template>
+
+        <template v-if="updateDownloaded">
+          <el-button
+            type="success"
+            size="large"
+            style="width: 100%"
+            @click="installUpdate"
+          >
+            <el-icon><Check /></el-icon>
+            立即安装并重启
+          </el-button>
+          <el-button
+            size="large"
+            style="width: 100%; margin-left: 0"
+            text
+            @click="remindLater"
+          >
+            稍后安装
+          </el-button>
         </template>
       </div>
     </div>
@@ -175,124 +188,172 @@ const remindLater = () => {
 </template>
 
 <style lang="scss" scoped>
-.update-dialog {
-  :deep(.el-dialog__header) {
-    border-bottom: 1px solid var(--border-light);
-    margin-right: 0;
-    padding: 16px 20px;
-  }
-  
-  :deep(.el-dialog__body) {
-    padding: 24px;
-  }
-  
-  :deep(.el-dialog__title) {
-    font-weight: 600;
-    font-size: 16px;
-  }
-  
-  :deep(.el-dialog) {
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
-  }
-}
-
-.update-content {
+/* ---- 内容主体 ---- */
+.update-body {
+  position: relative;
+  padding: 20px 22px 22px;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  gap: 14px;
 }
 
-.update-header {
+/* ---- 标题区 ---- */
+.update-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.title-block {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  margin-bottom: 10px;
+  gap: 3px;
 }
 
-.update-icon {
-  margin-bottom: 16px;
-  .icon {
-    width: 70px;
-    height: 70px;
-  }
-}
-
-.update-title {
+.eyebrow {
   margin: 0;
-  font-size: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.main-title {
+  margin: 0;
+  font-size: 22px;
   font-weight: 600;
-  color: var(--text-primary, #303133);
+  color: var(--text-primary);
+  line-height: 1.2;
 }
 
-.update-info {
-  margin-bottom: 12px;
-  width: 100%;
-}
-
-.version-card {
+.app-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-light);
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 10px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  flex-shrink: 0;
+
+  img {
+    width: 26px;
+    height: 26px;
+    object-fit: contain;
+  }
 }
 
-.version-item {
+/* ---- 版本对比 ---- */
+.version-row {
+  display: flex;
+  align-items: center;
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+  padding: 12px 16px;
+}
+
+.version-cell {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 0 12px;
+  gap: 3px;
 }
 
-.version-label {
-  font-size: 12px;
-  color: var(--text-secondary, #909399);
-  margin-bottom: 4px;
+.v-label {
+  font-size: 11px;
+  color: var(--el-text-color-placeholder);
 }
 
-.version-value {
-  font-size: 16px;
+.v-num {
+  font-size: 14px;
   font-weight: 500;
-  
-  &.highlight {
-    color: var(--accent-blue, #409eff);
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+
+  &.new {
+    color: var(--text-primary);
     font-weight: 600;
   }
 }
 
-.version-divider {
-  color: var(--text-secondary, #909399);
-  margin: 0 8px;
+.v-arrow {
+  color: var(--el-border-color);
+  font-size: 16px;
+  margin: 0 4px;
 }
 
-.download-progress {
-  width: 100%;
-  margin-bottom: 20px;
-  
-  p {
-    margin-bottom: 10px;
-  }
+/* ---- 更新日志 ---- */
+.release-notes {
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+  padding: 12px 14px;
 }
 
-.update-actions {
-  display: flex;
-  justify-content: center;
-  gap: 16px;
-  margin-top: 16px;
-  
-  :deep(.el-button) {
-    min-width: 120px;
-    transition: all 0.3s ease;
-    
-    &:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+.notes-title {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.notes-body {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text-primary);
+  max-height: 30vh;  // 使用视口高度单位
+  overflow-y: auto;
+
+  :deep(ul) {
+    margin: 0;
+    padding-left: 16px;
+
+    li + li {
+      margin-top: 4px;
     }
   }
+
+  :deep(p) {
+    margin: 0 0 6px;
+
+    &:last-child {
+      margin: 0;
+    }
+  }
+}
+
+/* ---- 下载进度 ---- */
+.progress-area {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.progress-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.progress-pct {
+  font-size: 13px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+/* ---- 操作按钮区 ---- */
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 2px;
 }
 </style>
