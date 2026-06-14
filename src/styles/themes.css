@@ -28,7 +28,7 @@
   --bg-secondary: #171717;  /* 侧边栏、导航 */
   --bg-tertiary:  #1f1f1f;  /* 代码块、输入框 */
   --bg-hover:     #232323;
-  --bg-active:    #2e2e2e;
+  --bg-active:    #282828;
 
   /* 文本颜色（按重要程度） */
   --text-primary:   rgba(255,255,255,.92);
@@ -107,7 +107,7 @@
   --bg-secondary: #fafafa;
   --bg-tertiary:  #ffffff;
   --bg-hover:     #eef2ff;
-  --bg-active:    #e0e7ff;
+  --bg-active:    #eaefff;
 
   /* 文本颜色 */
   --text-primary:   #111111;

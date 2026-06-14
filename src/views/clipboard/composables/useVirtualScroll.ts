@@ -13,7 +13,7 @@ export function useVirtualScroll(items: () => any[]) {
     startIndex: 0, // 可见区域的起始索引
     endIndex: 0, // 可见区域的结束索引
     visibleCount: 0, // 可见项目数量
-    itemHeight: 100, // 每个项目的大概高度（根据你的CSS调整）
+    itemHeight: 60, // 每个项目的大概高度（根据你的CSS调整）
     containerHeight: 0, // 容器高度
     totalHeight: 0, // 所有项目的总高度
   });

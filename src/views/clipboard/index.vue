@@ -23,15 +23,20 @@ const { clipboardData, isLoadingMore, activeFilter, totalItems, currentPage } =
 const { searchQuery } = useSearch();
 
 // 选择功能
-const {
-  selectedIds,
-} = useSelection(() => clipboardData.value);
+const { selectedIds } = useSelection(() => clipboardData.value);
 
 // 虚拟滚动
 const { contentListRef, virtualScroll, visibleItems, handleScroll } =
   useVirtualScroll(() => clipboardData.value);
 
 const selectedItem = ref<ClipboardItem | null>(null);
+
+const typeLabel: Record<string, string> = {
+  text: "文本",
+  url: "链接",
+  code: "代码",
+  image: "图片",
+};
 
 // 监听类型过滤器变化，重新加载数据
 watch(activeFilter, (newType) => {
@@ -137,8 +142,6 @@ const copyItem = (item: ClipboardItem, event?: Event) => {
     });
 };
 
-
-
 // 组件挂载时启动监听，加载历史记录，卸载时停止监听
 onMounted(() => {
   // 加载历史记录（只加载第一页）
@@ -233,33 +236,17 @@ onActivated(() => {
                 }"
                 @click="selectItem(item)"
               >
-                <div class="item-icon">
-                  <el-icon>
-                    <i-ep-Document
-                      style="color: var(--accent-blue)"
-                      v-if="item.type === 'text'"
-                    />
-                    <i-ep-Link
-                      style="color: var(--accent-green)"
-                      v-else-if="item.type === 'url'"
-                    />
-                    <i-ep-Tickets
-                      style="color: var(--accent-purple)"
-                      v-else-if="item.type === 'code'"
-                    />
-                    <i-ep-Picture
-                      style="color: var(--accent-red)"
-                      v-else-if="item.type === 'image'"
-                    />
-                    <i-ep-Document style="color: var(--accent-blue)" v-else />
-                  </el-icon>
+                <div class="item-type-badge" :class="`type-${item.type}`">
+                  {{ typeLabel[item.type] ?? "文本" }}
                 </div>
                 <div class="item-content">
                   <div class="item-title">
                     {{ truncateText(item.content, 50) }}
                   </div>
+                  <div class="item-time">
+                    {{ formatRelativeTime(item.timestamp) }}
+                  </div>
                 </div>
-                <div class="item-time">{{ formatRelativeTime(item.timestamp) }}</div>
               </div>
 
               <!-- 全部加载完毕提示 -->
@@ -370,7 +357,7 @@ onActivated(() => {
   flex: 1;
   overflow-y: auto;
   padding: 16px 24px;
-  background: var(--bg-primary);
+  background: var(--bg-secondary);
   scroll-behavior: smooth;
   position: relative;
 }
@@ -404,11 +391,10 @@ onActivated(() => {
 
 /* 内容项目 */
 .content-item {
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-light);
+  background: transparent;
   border-radius: 10px;
-  padding: 14px;
-  margin: 7px 15px;
+  padding: 7px;
+  margin: 7px;
   cursor: pointer;
   transition: all 0.25s ease;
   position: relative;
@@ -418,7 +404,6 @@ onActivated(() => {
 
   &:hover {
     background: var(--bg-hover);
-    border: 1px solid var(--border-medium);
     background-origin: border-box;
     background-clip: padding-box, border-box;
     transform: translateY(-2px);
@@ -426,7 +411,6 @@ onActivated(() => {
 
   &.active {
     background: var(--bg-active);
-    border: 1px solid transparent;
     background-origin: border-box;
     background-clip: padding-box, border-box;
   }
@@ -438,19 +422,30 @@ onActivated(() => {
   }
 }
 
-.item-icon {
-  width: 42px;
-  height: 42px;
-  background: var(--bg-active);
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
+.item-type-badge {
   flex-shrink: 0;
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
-    0 2px 4px rgba(0, 0, 0, 0.1);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.02em;
+
+  &.type-text {
+    background: var(--type-text-bg);
+    color: var(--accent-blue);
+  }
+  &.type-url {
+    background: var(--type-url-bg);
+    color: var(--accent-green);
+  }
+  &.type-code {
+    background: var(--type-code-bg);
+    color: var(--accent-purple);
+  }
+  &.type-image {
+    background: var(--type-image-bg);
+    color: var(--accent-red);
+  }
 }
 
 .item-content {
@@ -476,8 +471,8 @@ onActivated(() => {
   color: var(--text-tertiary);
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
-  margin-left: 8px;
   align-self: center;
+  margin-top: 4px;
 }
 
 /* 加载指示器样式 */
