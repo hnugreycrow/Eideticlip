@@ -77,14 +77,14 @@ body,
 }
 
 .el-button--primary {
-  --el-button-bg-color: var(--accent-blue);
+  --el-button-bg-color: var(--accent-primary);
   --el-button-text-color: var(--text-inverse);
-  --el-button-border-color: var(--accent-blue);
+  --el-button-border-color: var(--accent-primary);
   --el-button-hover-bg-color: var(
-    --accent-blue-hover,
+    --accent-primary-hover,
     var(--bg-active)
   ); /* 使用主题变量 */
-  --el-button-hover-border-color: var(--accent-blue-hover, var(--bg-active));
+  --el-button-hover-border-color: var(--accent-primary-hover, var(--bg-active));
   --el-button-hover-text-color: var(--text-inverse);
 }
 

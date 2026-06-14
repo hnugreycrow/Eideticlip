@@ -164,7 +164,7 @@ onUnmounted(() => {
 
 // 关闭按钮 - 使用更醒目的红色
 .close-btn:hover {
-  background-color: var(--accent-red);
+  background-color: var(--accent-danger);
   
   :deep(.el-icon) {
     color: white;

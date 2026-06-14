@@ -205,7 +205,7 @@ const closeZoomView = () => {
   flex: 1;
   min-width: 0;
   height: 100%;
-  background: var(--bg-secondary);
+  background: var(--detail-bg);
   border-left: 1px solid var(--border-light);
   display: flex;
   flex-direction: column;
@@ -246,7 +246,7 @@ const closeZoomView = () => {
   }
 
   &.is-favorite {
-    color: var(--accent-yellow);
+    color: var(--accent-quaternary);
   }
 }
 
@@ -266,19 +266,19 @@ const closeZoomView = () => {
 }
 
 .detail-type-label.type-text {
-  color: var(--accent-blue);
+  color: var(--accent-primary);
 }
 
 .detail-type-label.type-url {
-  color: var(--accent-green);
+  color: var(--accent-secondary);
 }
 
 .detail-type-label.type-code {
-  color: var(--accent-purple);
+  color: var(--accent-tertiary);
 }
 
 .detail-type-label.type-image {
-  color: var(--accent-red);
+  color: var(--accent-danger);
 }
 
 .detail-type-label {
@@ -361,7 +361,7 @@ const closeZoomView = () => {
 }
 
 .meta-value-favorite {
-  color: var(--accent-yellow);
+  color: var(--accent-quaternary);
   display: inline-flex;
   align-items: center;
   gap: 4px;

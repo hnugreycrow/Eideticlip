@@ -102,7 +102,7 @@ const openAbout = () => {
 
 .nav-item.active {
   background: var(--bg-active);
-  color: var(--accent-blue);
+  color: var(--accent-primary);
   opacity: 1;
   box-shadow: 0 2px 8px rgba(0, 132, 255, 0.15);
 }
@@ -115,7 +115,7 @@ const openAbout = () => {
   transform: translateY(-50%);
   width: 5px;
   height: 20px;
-  background: var(--accent-blue);
+  background: var(--accent-primary);
   border-radius: 0 2px 2px 0;
 }
 
@@ -130,7 +130,7 @@ const openAbout = () => {
   position: absolute;
   top: 4px;
   right: 4px;
-  background: var(--accent-red);
+  background: var(--accent-danger);
   color: white;
   font-size: 10px;
   padding: 2px 5px;

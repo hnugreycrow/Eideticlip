@@ -99,7 +99,7 @@ const selectFilter = (key: FilterOption["key"]) => {
 
   &.active {
     background: var(--bg-active);
-    color: var(--accent-blue);
+    color: var(--accent-primary);
     font-weight: 500;
   }
 }
@@ -123,6 +123,6 @@ const selectFilter = (key: FilterOption["key"]) => {
 }
 
 .filter-item.active .filter-count {
-  color: var(--accent-blue);
+  color: var(--accent-primary);
 }
 </style>

@@ -303,7 +303,7 @@ onActivated(() => {
 /* 搜索区域 */
 .search-container {
   padding: 12px;
-  background: var(--bg-secondary);
+  background: var(--list-bg);
   border-bottom: 1px solid var(--border-light);
   display: flex;
   align-items: center;
@@ -357,7 +357,7 @@ onActivated(() => {
   flex: 1;
   overflow-y: auto;
   padding: 16px 24px;
-  background: var(--bg-secondary);
+  background: var(--list-bg);
   scroll-behavior: smooth;
   position: relative;
 }
@@ -432,19 +432,19 @@ onActivated(() => {
 
   &.type-text {
     background: var(--type-text-bg);
-    color: var(--accent-blue);
+    color: var(--accent-primary);
   }
   &.type-url {
     background: var(--type-url-bg);
-    color: var(--accent-green);
+    color: var(--accent-secondary);
   }
   &.type-code {
     background: var(--type-code-bg);
-    color: var(--accent-purple);
+    color: var(--accent-tertiary);
   }
   &.type-image {
     background: var(--type-image-bg);
-    color: var(--accent-red);
+    color: var(--accent-danger);
   }
 }
 
