@@ -10,8 +10,6 @@ defineOptions({
   name: "settings",
 });
 
-// 使用主题服务中的当前主题
-const theme = ref<ThemeType>("dark");
 const shortcut = ref("Alt+Shift+C");
 const tempKeys = ref<string[]>([]);
 const isRecording = ref(false);
@@ -20,6 +18,12 @@ const minimizeToTray = ref<boolean>(false);
 const dataRetentionDays = ref<number>(1);
 const isLoading = ref<boolean>(false);
 const router = useRouter();
+
+// 主题使用计算属性，确保与 themeService 同步
+const theme = computed<ThemeType>({
+  get: () => themeService.currentTheme.value,
+  set: (value: ThemeType) => themeService.setTheme(value),
+});
 
 // 点击输入框时清空内容并开始记录
 const startRecording = () => {
@@ -111,7 +115,6 @@ const displayKeys = computed(() => {
 onMounted(async () => {
   // 初始化主题值
   await themeService.initTheme();
-  theme.value = themeService.currentTheme.value;
 
   minimizeToTray.value = await window.config.get<boolean>("minimizeToTray");
   dataRetentionDays.value = await window.config.get<number>("dataRetentionDays");
@@ -124,11 +127,6 @@ onMounted(async () => {
   });
   window.ipcRenderer.send("get-current-shortcut");
 });
-
-// 切换主题
-const handleThemeChange = (value: ThemeType) => {
-  themeService.setTheme(value);
-};
 
 const handleMinimizeToTrayChange = (value: boolean) => {
   window.config.set("minimizeToTray", value);
@@ -193,7 +191,7 @@ onUnmounted(() => {
             <span>主题设置</span>
             <div class="setting-description">选择应用界面主题</div>
           </div>
-          <el-radio-group v-model="theme" @change="handleThemeChange">
+          <el-radio-group v-model="theme">
             <el-radio-button label="light">浅色</el-radio-button>
             <el-radio-button label="dark">深色</el-radio-button>
           </el-radio-group>

@@ -2,9 +2,15 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import MaximizeIcon from '@/assets/window-maximize.svg'
 import RestoreIcon from '@/assets/window-restore.svg'
+import { themeService, type ThemeType } from '@/utils/theme'
 
 const isMaximized = ref(false)
 let unsubscribe: (() => void) | null = null
+
+const toggleTheme = () => {
+  const nextTheme: ThemeType = themeService.currentTheme.value === 'dark' ? 'light' : 'dark'
+  themeService.setTheme(nextTheme)
+}
 
 const handleMinimize = () => {
   window.windowControls.minimize();
@@ -60,6 +66,18 @@ onUnmounted(() => {
       <el-text class="app-title">Eideticlip</el-text>
     </div>
     <div class="titlebar-controls">
+      <!-- 主题切换按钮 -->
+      <el-button
+        class="titlebar-btn theme-btn"
+        :aria-label="themeService.currentTheme.value === 'dark' ? '切换到浅色主题' : '切换到深色主题'"
+        @click="toggleTheme"
+      >
+        <template #icon>
+          <i-ep-moon v-if="themeService.currentTheme.value === 'dark'" />
+          <i-ep-sunny v-else />
+        </template>
+      </el-button>
+
       <!-- 最小化按钮 -->
       <el-button class="titlebar-btn minimize-btn" aria-label="最小化窗口" @click="handleMinimize">
         <template #icon> <i-ep-minus /></template>
@@ -152,9 +170,10 @@ onUnmounted(() => {
   }
 }
 
-// 最小化按钮，最大化按钮
+// 最小化按钮，最大化按钮，主题切换按钮
 .minimize-btn:hover,
-.maximize-btn:hover {
+.maximize-btn:hover,
+.theme-btn:hover {
   background-color: var(--bg-hover);
   
   :deep(.el-icon) {
