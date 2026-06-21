@@ -177,7 +177,7 @@ onUnmounted(() => {
 <template>
   <div class="settings-container">
     <div class="content-header">
-      <h2 style="font-size: 18px">设置</h2>
+      <span style="font-size: 18px">设置</span>
     </div>
     <div class="content">
       <el-card style="width: 100%" class="setting-card">
@@ -306,14 +306,12 @@ onUnmounted(() => {
 .content-header {
   height: 60px;
   padding: 0 24px;
-  background: var(--bg-secondary);
-  border-bottom: 1px solid var(--border-light);
   display: flex;
   align-items: center;
 }
 
 .content {
-  padding: 24px;
+  padding: 12px 24px;
   overflow-y: auto;
   scroll-behavior: smooth;
 }
@@ -321,7 +319,8 @@ onUnmounted(() => {
 .setting-card {
   border-radius: 8px;
   border-color: var(--border-light);
-  background: var(--bg-secondary);
+  background: var(--setting-card-bg);
+  box-shadow: none;
 }
 
 :deep(.setting-item) {
