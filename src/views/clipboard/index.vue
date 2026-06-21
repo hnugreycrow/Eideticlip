@@ -192,8 +192,11 @@ onActivated(() => {
             </el-button>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item @click="clipboardStore.clearAll">
-                  <i-ep-Delete class="el-icon--left" />清空
+                <el-dropdown-item @click="clipboardStore.clearExceptFavorites">
+                  <i-ep-Delete class="el-icon--left" />清空非收藏记录
+                </el-dropdown-item>
+                <el-dropdown-item @click="clipboardStore.clearAll" divided>
+                  <i-ep-Warning class="el-icon--left" />清空全部（含收藏）
                 </el-dropdown-item>
               </el-dropdown-menu>
             </template>

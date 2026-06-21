@@ -197,6 +197,44 @@ export function clearClipboardHistory() {
 }
 
 /**
+ * 清空剪贴板历史但保留收藏的记录
+ * @returns 删除的记录数量，失败时返回 -1
+ */
+export function clearClipboardExceptFavorites() {
+  try {
+    let deletedCount = 0;
+    db.transaction(() => {
+      // 删除所有非收藏记录
+      const result = db
+        .prepare(`DELETE FROM clipboard_items WHERE is_favorite = 0`)
+        .run();
+      deletedCount = result.changes;
+
+      // 重新整理ID序列
+      const maxIdResult = db
+        .prepare("SELECT MAX(id) as maxId FROM clipboard_items")
+        .get();
+      const maxId = maxIdResult?.maxId || 0;
+
+      if (maxId > 0) {
+        db.prepare(
+          `UPDATE sqlite_sequence SET seq = ? WHERE name = 'clipboard_items'`
+        ).run(maxId);
+      } else {
+        db.prepare(
+          `DELETE FROM sqlite_sequence WHERE name = 'clipboard_items'`
+        ).run();
+      }
+    })();
+    console.log(`已清除 ${deletedCount} 条非收藏记录`);
+    return deletedCount;
+  } catch (err) {
+    console.error("Failed to clear clipboard except favorites:", err);
+    return -1;
+  }
+}
+
+/**
  * 清除过期的剪贴板记录（保留收藏的记录）
  * @param retentionDays 保留天数
  * @returns 清除的记录数量

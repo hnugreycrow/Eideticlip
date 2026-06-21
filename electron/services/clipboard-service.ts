@@ -5,6 +5,7 @@ import {
   deleteClipboardItem,
   deleteBatchClipboardItems,
   clearClipboardHistory,
+  clearClipboardExceptFavorites,
   getClipboardHistory,
   setFavoriteStatus,
   getFavoriteClipboardItems,
@@ -84,6 +85,11 @@ export class ClipboardService {
     // 清空剪贴板历史
     ipcMain.handle("clipboard-clear-all", () => {
       return clearClipboardHistory();
+    });
+
+    // 清空剪贴板历史但保留收藏
+    ipcMain.handle("clipboard-clear-except-favorites", () => {
+      return clearClipboardExceptFavorites();
     });
 
     // 获取剪贴板历史（支持分页、按类型筛选、关键词搜索）
