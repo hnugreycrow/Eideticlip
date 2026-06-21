@@ -245,6 +245,7 @@ onActivated(() => {
                   </div>
                   <div class="item-time">
                     {{ formatRelativeTime(item.timestamp) }}
+                    <i-ep-Star v-if="item.is_favorite" class="favorite-star" />
                   </div>
                 </div>
               </div>
@@ -473,6 +474,15 @@ onActivated(() => {
   flex-shrink: 0;
   align-self: center;
   margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.favorite-star {
+  font-size: 13px;
+  color: var(--accent-quaternary);
+  flex-shrink: 0;
 }
 
 /* 加载指示器样式 */
